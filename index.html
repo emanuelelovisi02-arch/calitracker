@@ -1,0 +1,4890 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>CaliTracker</title>
+  
+  <!-- Impostazioni Standalone (nascondono la barra degli indirizzi e UI del browser) -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CaliTracker">
+  <meta name="theme-color" content="#0d0f12">
+
+  <!-- PWA Web App Manifest & Service Worker -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.warn('Service worker registration non riuscita:', err);
+        });
+      });
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-main: #0d0f12;
+      --surface-card: #161920;
+      --surface-elevated: #1e232d;
+      --border-subtle: #262b36;
+      --border-focus: #3b82f6;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-green: #10b981;
+      --accent-green-hover: #059669;
+      --accent-blue: #3b82f6;
+      --accent-blue-hover: #2563eb;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --bottom-nav-height: 64px;
+      --timer-bar-height: 70px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      scrollbar-width: thin;
+      scrollbar-color: #262b36 #0d0f12;
+    }
+
+    /* Custom Dark Scrollbar (Webkit/Blink) */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0d0f12;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #262b36;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b4454;
+    }
+
+    /* Rimozione freccette native di sistema su input numerici per look scuro e pulito */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+      padding-bottom: calc(var(--bottom-nav-height) + var(--timer-bar-height) + 20px);
+      min-height: 100vh;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* TOP HEADER */
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(13, 15, 18, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-header .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .top-header .brand-icon {
+      color: var(--accent-green);
+      font-size: 1.25rem;
+    }
+
+    .top-header .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-bw {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-icon-top {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+
+    .btn-icon-top:active {
+      background: var(--surface-elevated);
+    }
+
+    /* ACTIVE ROUTINE TRIGGER BAR (HEADER SELECTOR) */
+    .active-routine-bar-container {
+      padding: 10px 16px;
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn-routine-picker-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 8px 18px;
+      color: var(--text-main);
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+      transition: all 0.2s ease;
+      min-height: 44px;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .btn-routine-picker-trigger:hover,
+    .btn-routine-picker-trigger:active {
+      border-color: var(--accent-green);
+      background: var(--surface-elevated);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .trigger-routine-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--accent-green);
+      background: rgba(16, 185, 129, 0.12);
+      padding: 2px 8px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .trigger-routine-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #ffffff;
+      flex: 1;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .trigger-routine-icon {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* MAIN CONTAINER & TABS */
+    .tab-content {
+      display: none;
+      padding: 0 16px 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* CARDS & GERARCHIA VISIVA ERGONOMICA (STILE HEVY/STRONG) */
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 14px;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+
+    /* Esercizio attualmente in esecuzione (Focus Visivo) */
+    .card.active-exercise {
+      border: 1.5px solid var(--accent-green);
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.07) 0%, var(--surface-card) 35%);
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.18);
+    }
+
+    /* Esercizio completato */
+    .card.completed-exercise {
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      background: var(--surface-card);
+      opacity: 0.94;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 1.22rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+
+    .card.active-exercise .card-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-badges-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .status-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-badge.status-in-progress {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+      animation: pulseNeon 2.2s infinite ease-in-out;
+    }
+
+    @keyframes pulseNeon {
+      0%, 100% { box-shadow: 0 0 6px rgba(16, 185, 129, 0.25); }
+      50% { box-shadow: 0 0 14px rgba(16, 185, 129, 0.5); }
+    }
+
+    .status-badge.status-completed {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .card-badge {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: var(--surface-elevated);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .target-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .target-desc .highlight {
+      color: #60a5fa;
+      font-weight: 700;
+    }
+
+    /* BOX STORICO RECENTE OTTIMIZZATO (3 RIGHE PULITE, ZERO SCRITTE INUTILI) */
+    .last-session-box {
+      background: rgba(15, 23, 42, 0.55);
+      border-left: 3px solid #3b82f6;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      margin-bottom: 12px;
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .last-session-box.hist-box-empty {
+      border-left-color: var(--border-subtle);
+      background: rgba(255, 255, 255, 0.02);
+      padding: 6px 10px;
+    }
+
+    .hist-line-spec {
+      font-size: 0.84rem;
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+
+    .hist-when {
+      color: #93c5fd;
+      font-weight: 700;
+    }
+
+    .hist-line-sets {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+    }
+
+    .hist-sets-label {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      margin-right: 4px;
+    }
+
+    .hist-sets-val {
+      font-weight: 600;
+      color: #f3f4f6;
+    }
+
+    .hist-line-rpe {
+      margin-top: 2px;
+    }
+
+    .badge-first-time {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 8px;
+      border-radius: 8px;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    /* MODALE CENTRALE CON SFONDO SFOCATO (BLUR) PER SELEZIONE ALLENAMENTO */
+    .modal-backdrop-blur {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 12, 16, 0.78);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-routine-dialog {
+      background: #14171f;
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      max-width: 480px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(16px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-routine-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      background: #161922;
+    }
+
+    .modal-routine-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .modal-routine-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .btn-modal-close {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .btn-modal-close:hover {
+      color: #ffffff;
+      border-color: var(--text-muted);
+    }
+
+    .routine-cards-scroll-container {
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .routine-choice-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .routine-choice-card:hover,
+    .routine-choice-card:active {
+      border-color: var(--accent-green);
+      background: rgba(22, 25, 32, 0.95);
+      transform: translateY(-1px);
+    }
+
+    .routine-choice-card.is-active {
+      border: 1.5px solid var(--accent-green);
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.2);
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, var(--surface-card) 60%);
+    }
+
+    .routine-choice-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .routine-choice-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .routine-choice-count {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      background: var(--surface-elevated);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .routine-sector-badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .sector-mini-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+
+    .sector-mini-badge.spinta { border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; }
+    .sector-mini-badge.tirata { border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
+    .sector-mini-badge.gambe { border-color: rgba(245, 158, 11, 0.4); color: #fcd34d; }
+    .sector-mini-badge.addome { border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe; }
+
+    .routine-choice-exercises-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .exercise-mini-pill {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: var(--surface-elevated);
+      padding: 2px 7px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .routine-choice-empty-note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .routine-choice-add-card {
+      border: 1.5px dashed rgba(16, 185, 129, 0.45);
+      background: rgba(16, 185, 129, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 16px;
+      cursor: pointer;
+      border-radius: 14px;
+      transition: all 0.2s ease;
+      color: #34d399;
+      font-weight: 700;
+      font-size: 0.95rem;
+      gap: 8px;
+    }
+
+    .routine-choice-add-card:hover,
+    .routine-choice-add-card:active {
+      border-color: var(--accent-green);
+      background: rgba(16, 185, 129, 0.12);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    /* GESTIONE SCHEDE NEL TAB 2 (EDITOR) */
+    .schede-management-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      background: var(--surface-card);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .schede-current-label {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .schede-btn-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* CARD CONTROLS ROW */
+    .controls-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .input-dark {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.92rem;
+      font-weight: 500;
+      outline: none;
+      min-height: 42px;
+      width: 100%;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input-dark:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+    }
+
+    .select-dark {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-color: var(--surface-elevated);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 15px 15px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      padding: 10px 38px 10px 14px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      outline: none;
+      min-height: 42px;
+      width: 100%;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-image 0.15s ease;
+    }
+
+    .select-dark:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .select-dark:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    }
+
+    .select-dark:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      border-color: var(--border-subtle);
+    }
+
+    .select-dark option {
+      background-color: #161920;
+      color: #f3f4f6;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 10px;
+    }
+
+    /* AUTOCOMPLETE DROPDOWN */
+    .autocomplete-container {
+      position: relative;
+    }
+
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: #181c24;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .autocomplete-item {
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background 0.15s ease;
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    .autocomplete-item:hover, .autocomplete-item.active {
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .autocomplete-item-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-main);
+    }
+
+    .autocomplete-item-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* SERIES GRID */
+    .series-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .series-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-elevated);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .series-row.completed {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .series-num {
+      width: 24px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .series-input-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .series-input {
+      width: 100%;
+      background: var(--bg-main);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      min-height: 40px;
+    }
+
+    .series-unit {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      min-width: 32px;
+    }
+
+    .btn-check {
+      width: 44px;
+      height: 40px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+
+    .series-row.completed .btn-check {
+      background: var(--accent-green);
+      border-color: var(--accent-green);
+      color: #0d0f12;
+    }
+
+    /* BOTTONE ISOMETRIA */
+    .btn-iso-start {
+      width: 100%;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid var(--accent-blue);
+      color: #93c5fd;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .btn-iso-start:active {
+      background: rgba(59, 130, 246, 0.3);
+    }
+
+    /* SERIE ACTIONS (+ / -) */
+    .series-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn-action-small {
+      flex: 1;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 36px;
+    }
+
+    .btn-action-small:active {
+      color: var(--text-main);
+      border-color: var(--text-muted);
+    }
+
+    /* CARD FOOTER (RPE & NOTES) */
+    .card-footer-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* RPE CONTROL BAR & GLOW AURA */
+    .rpe-picker-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .rpe-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .prev-rpe-badge {
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .prev-rpe-badge.rpe-green {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .prev-rpe-badge.rpe-orange {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+
+    .prev-rpe-badge.rpe-red {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+
+    .rpe-control-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--surface-elevated);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.25s ease-in-out;
+    }
+
+    .rpe-control-bar.glow-off {
+      border-color: var(--border-subtle);
+      box-shadow: none;
+    }
+
+    .rpe-control-bar.glow-off .rpe-badge-value {
+      color: var(--text-muted);
+      border-color: var(--border-subtle);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .rpe-control-bar.glow-green {
+      border-color: #10b981;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4), inset 0 0 6px rgba(16, 185, 129, 0.15);
+    }
+
+    .rpe-control-bar.glow-orange {
+      border-color: #f59e0b;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.45), inset 0 0 6px rgba(245, 158, 11, 0.15);
+    }
+
+    .rpe-control-bar.glow-red {
+      border-color: #ef4444;
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.6), inset 0 0 8px rgba(239, 68, 68, 0.2);
+    }
+
+    .rpe-control-bar.glow-neutral {
+      border-color: #3b82f6;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    }
+
+    .rpe-badge-value {
+      font-size: 0.95rem;
+      font-weight: 800;
+      min-width: 68px;
+      text-align: center;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      letter-spacing: -0.01em;
+    }
+
+    .rpe-control-bar.glow-green .rpe-badge-value {
+      color: #34d399;
+      border-color: #10b981;
+    }
+
+    .rpe-control-bar.glow-orange .rpe-badge-value {
+      color: #fbbf24;
+      border-color: #f59e0b;
+    }
+
+    .rpe-control-bar.glow-red .rpe-badge-value {
+      color: #f87171;
+      border-color: #ef4444;
+    }
+
+    .rpe-control-bar.glow-neutral .rpe-badge-value {
+      color: #93c5fd;
+      border-color: #3b82f6;
+    }
+
+    .rpe-buttons {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .btn-rpe {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 38px;
+      height: 36px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .btn-rpe:active {
+      transform: scale(0.92);
+    }
+
+    .btn-rpe.active {
+      background: var(--text-main);
+      color: #0d0f12;
+      border-color: #fff;
+    }
+
+    .btn-rpe-half {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--accent-blue);
+      padding: 0 10px;
+      height: 36px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .btn-rpe-half:active {
+      transform: scale(0.92);
+    }
+
+    .btn-rpe-half.active {
+      background: var(--accent-blue);
+      color: #fff;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-rpe-half[disabled] {
+      opacity: 0.25 !important;
+      cursor: not-allowed !important;
+      border-color: var(--border-subtle) !important;
+      color: var(--text-muted) !important;
+      background: var(--surface-card) !important;
+      box-shadow: none !important;
+      pointer-events: none;
+    }
+
+    /* RECAP RPE & SECTOR BREAKDOWN STYLING */
+    .recap-sector-block {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .recap-sector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .recap-sector-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .recap-sector-name {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    .recap-sector-badge {
+      font-size: 0.72rem;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .recap-sector-stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .recap-sector-vol {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .recap-sector-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .recap-exercise-row {
+      background: var(--surface-elevated);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .recap-rpe-badge {
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+    }
+
+    .recap-rpe-badge.rpe-green {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: #10b981;
+    }
+
+    .recap-rpe-badge.rpe-orange {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: #f59e0b;
+    }
+
+    .recap-rpe-badge.rpe-red {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border-color: #ef4444;
+    }
+
+    .recap-rpe-badge.rpe-neutral {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border-color: #3b82f6;
+    }
+
+    .rpe-progress-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .rpe-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .rpe-progress-fill.rpe-green { background: #10b981; }
+    .rpe-progress-fill.rpe-orange { background: #f59e0b; }
+    .rpe-progress-fill.rpe-red { background: #ef4444; }
+    .rpe-progress-fill.rpe-neutral { background: #3b82f6; }
+
+    /* PRIMARY CTA BUTTON */
+    .btn-primary-cta {
+      width: 100%;
+      background: var(--accent-green);
+      color: #0d0f12;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      margin-top: 16px;
+      margin-bottom: 24px;
+      min-height: 48px;
+    }
+
+    .btn-primary-cta:active {
+      background: var(--accent-green-hover);
+      transform: scale(0.99);
+    }
+
+    .btn-primary-cta:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* FLOATING TIMER BAR */
+    .floating-timer-bar {
+      position: fixed;
+      bottom: var(--bottom-nav-height);
+      left: 0;
+      right: 0;
+      height: var(--timer-bar-height);
+      background: rgba(18, 21, 28, 0.98);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(59, 130, 246, 0.35);
+      padding: 6px 16px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      box-shadow: 0 -6px 22px rgba(0, 0, 0, 0.6);
+    }
+
+    .floating-timer-bar.active {
+      display: flex;
+      animation: slideUp 0.25s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .timer-progress-track {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .timer-progress-fill {
+      height: 100%;
+      background: var(--accent-blue);
+      width: 100%;
+      transition: width 0.3s linear;
+    }
+
+    .timer-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .timer-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    .timer-digits {
+      font-size: 1.85rem;
+      font-weight: 900;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--accent-blue);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .timer-digits.urgent {
+      color: var(--accent-warning);
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+
+    .timer-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-timer-return {
+      background: rgba(59, 130, 246, 0.18);
+      border: 1px solid var(--accent-blue);
+      color: #93c5fd;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 38px;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-timer-return.show {
+      display: inline-flex;
+    }
+
+    .btn-timer-return:active {
+      transform: scale(0.95);
+      background: rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-timer-mod {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 6px 11px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 38px;
+    }
+
+    .btn-timer-mod:active {
+      transform: scale(0.94);
+    }
+
+    .btn-timer-skip {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-danger);
+      color: #fca5a5;
+      padding: 6px 13px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 38px;
+    }
+
+    .btn-timer-skip:active {
+      transform: scale(0.94);
+    }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--bottom-nav-height);
+      background: rgba(13, 15, 18, 0.98);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 25%;
+      height: 100%;
+      transition: color 0.2s;
+    }
+
+    .nav-item .nav-icon {
+      font-size: 1.25rem;
+    }
+
+    .nav-item.active {
+      color: var(--accent-green);
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .modal-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background: var(--surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      z-index: 300;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success {
+      border-color: var(--accent-green);
+      color: #34d399;
+    }
+
+    .toast.error {
+      border-color: var(--accent-danger);
+      color: #f87171;
+    }
+
+    /* ISOMETRIC OVERLAY MODAL */
+    .iso-modal {
+      text-align: center;
+      padding: 30px 20px;
+    }
+
+    .iso-stage-label {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .iso-countdown {
+      font-size: 5rem;
+      font-weight: 900;
+      font-family: monospace;
+      color: var(--accent-blue);
+      margin: 10px 0;
+      line-height: 1;
+    }
+
+    .iso-sub-target {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* SCHEDE TAB STYLING */
+    .routine-item {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .routine-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .routine-item-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .reorder-btns {
+      display: flex;
+      gap: 4px;
+    }
+
+    .btn-reorder {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .routine-item-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    /* CHARTS TAB CONTROLS & COMPACT PERIOD */
+    .category-filter-pills {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .category-filter-pills::-webkit-scrollbar {
+      display: none;
+    }
+
+    .pill-category {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .pill-category:hover {
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .pill-category.active {
+      background: var(--accent-green);
+      color: #0d0f12;
+      border-color: var(--accent-green);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .analytics-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .period-button-group {
+      display: inline-flex;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .btn-period {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-period:hover {
+      color: var(--text-main);
+    }
+
+    .btn-period.active {
+      background: var(--surface-elevated);
+      color: var(--accent-green);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    .chart-container {
+      position: relative;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 16px;
+      height: 280px;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    .history-table th {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+    }
+
+    .history-table td {
+      padding: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* SPINNER */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top: 3px solid var(--accent-green);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="top-header">
+    <div class="brand">
+      <span class="brand-icon">🏋️‍♂️</span>
+      <span>Allenamento</span>
+    </div>
+    <div class="header-actions">
+      <div class="badge-bw" id="headerBwBadge">BW: -- kg</div>
+      <button class="btn-icon-top" id="btnConfigApi" title="Connessione Database Google" onclick="openApiConfigModal()">⚙️</button>
+      <button class="btn-icon-top" id="btnSoundToggle" title="Audio">🔔</button>
+    </div>
+  </header>
+
+  <!-- ACTIVE ROUTINE BAR (CLICK TO OPEN CENTRAL PICKER) -->
+  <div class="active-routine-bar-container" id="routineSelectorBar">
+    <button type="button" class="btn-routine-picker-trigger" id="btnOpenRoutinePicker" onclick="openRoutinePickerModal()">
+      <span class="trigger-routine-label">Scheda</span>
+      <span class="trigger-routine-title" id="activeRoutineDisplayName">Allenamento I</span>
+      <span class="trigger-routine-icon">▾</span>
+    </button>
+  </div>
+
+  <!-- ==================== TAB 1: ALLENAMENTO ==================== -->
+  <main class="tab-content active" id="tabAllenamento">
+    <div id="exerciseCardsContainer">
+      <!-- Generato dinamicamente -->
+      <div style="text-align: center; padding: 40px;">
+        <div class="spinner"></div>
+        <p style="margin-top: 10px; color: var(--text-muted);">Caricamento dati scheda...</p>
+      </div>
+    </div>
+
+    <button class="btn-primary-cta" id="btnSalvaAllenamento">
+      <span>💾 Salva Allenamento</span>
+    </button>
+  </main>
+
+  <!-- ==================== TAB 2: SCHEDE (EDITOR) ==================== -->
+  <main class="tab-content" id="tabSchede">
+    <!-- BARRA GESTIONE SCHEDE (RINOMINA, ELIMINA) -->
+    <div class="schede-management-bar">
+      <div class="schede-current-label">
+        <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 2px;">Scheda in Modifica:</span>
+        <span style="font-size: 1.05rem; font-weight: 800; color: #ffffff;" id="schedaEditorCurrentName">Allenamento I</span>
+      </div>
+      <div class="schede-btn-group">
+        <button type="button" class="btn-action-small" onclick="openRenameRoutineModal()" style="padding: 6px 12px; background: var(--surface-elevated); font-weight: 600;">✏️ Rinomina</button>
+        <button type="button" class="btn-action-small" onclick="openDeleteRoutineModal()" style="padding: 6px 12px; background: var(--surface-elevated); color: var(--accent-danger); font-weight: 600;">🗑️ Elimina</button>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+      <h3 style="font-size: 1.1rem; font-weight: 700;" id="schedaEditorTitle">Programmazione</h3>
+      <button class="btn-action-small" id="btnOpenNewCatalogModal" style="flex: none; padding: 6px 12px; background: var(--surface-card);">+ Nuovo in Catalogo</button>
+    </div>
+
+    <div id="routineEditorList">
+      <!-- Generato dinamicamente -->
+    </div>
+
+    <button class="btn-action-small" id="btnAddExerciseToRoutine" style="width: 100%; margin-bottom: 12px; min-height: 42px; background: var(--surface-card); font-weight: 600;">
+      + Aggiungi Esercizio alla Scheda
+    </button>
+
+    <button class="btn-primary-cta" id="btnSaveRoutineEdits">
+      <span>💾 Salva Modifiche Scheda</span>
+    </button>
+  </main>
+
+  <!-- ==================== TAB 3: GRAFICI ==================== -->
+  <main class="tab-content" id="tabGrafici">
+    <!-- FILTRI CATEGORIA RAPIDI -->
+    <div class="category-filter-pills" id="analyticsCategoryPills" style="margin-bottom: 12px;">
+      <button class="pill-category active" data-sector="Tutti">Tutti</button>
+      <button class="pill-category" data-sector="Spinta">🤸 Spinta</button>
+      <button class="pill-category" data-sector="Tirata">🧗 Tirata</button>
+      <button class="pill-category" data-sector="Gambe">🦵 Gambe</button>
+      <button class="pill-category" data-sector="Addome">🫃🏻 Addome</button>
+    </div>
+
+    <div class="analytics-controls" style="margin-bottom: 10px;">
+      <div class="input-group">
+        <label class="input-label">Esercizio</label>
+        <select class="select-dark" id="analyticsExerciseSelect"></select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Metrica</label>
+        <select class="select-dark" id="analyticsMetricSelect">
+          <option value="carico">Peso</option>
+          <option value="tonnellaggio" id="optMetricTonnellaggio">Tonnellaggio</option>
+          <option value="volume">Volume</option>
+          <option value="difficolta">Difficoltà</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- HEADER GRAFICO CON FRAME TEMPORALE PICCOLO E VICINO -->
+    <div class="chart-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; margin-top: 4px;">
+      <span class="chart-title-tag" id="chartHeaderTitle" style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Progressione</span>
+      <div class="period-button-group" id="analyticsPeriodButtonGroup">
+        <button class="btn-period" data-period="90">3M</button>
+        <button class="btn-period" data-period="180">6M</button>
+        <button class="btn-period active" data-period="all">Tutto</button>
+      </div>
+      <input type="hidden" id="analyticsPeriodFilter" value="all">
+    </div>
+
+    <div class="chart-container">
+      <canvas id="progressionChart"></canvas>
+    </div>
+
+    <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Storico Sessioni</h4>
+    <div class="card" style="padding: 0; overflow-x: auto;">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Leva</th>
+            <th>Zav.</th>
+            <th>Carico</th>
+            <th>Serie</th>
+            <th>Vol.</th>
+            <th>RPE</th>
+          </tr>
+        </thead>
+        <tbody id="analyticsTableBody">
+          <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Nessun dato</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- ==================== TAB 4: PESO ==================== -->
+  <main class="tab-content" id="tabPeso">
+    <div class="card" style="text-align: center; padding: 24px;">
+      <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">Peso Attivo Attuale</div>
+      <div style="font-size: 3rem; font-weight: 800; color: var(--accent-green); margin-bottom: 16px;" id="currentWeightDisplay">--.- <span style="font-size: 1.2rem; font-weight: 600; color: var(--text-muted);">kg</span></div>
+
+      <div class="input-group" style="margin-bottom: 12px; text-align: left;">
+        <label class="input-label">Nuovo Peso (kg)</label>
+        <input type="number" step="0.1" inputmode="decimal" class="input-dark" id="inputNewWeight" placeholder="es. 68.4" style="font-size: 1.2rem; text-align: center; font-weight: 700;">
+      </div>
+
+      <div class="input-group" style="margin-bottom: 16px; text-align: left;">
+        <label class="input-label">Nota opzionale</label>
+        <input type="text" class="input-dark" id="inputWeightNote" placeholder="es. Digiuno mattina">
+      </div>
+
+      <button class="btn-primary-cta" id="btnLogWeight" style="margin: 0;">
+        <span>Registra Peso Oggi</span>
+      </button>
+    </div>
+
+    <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Andamento Recente</h4>
+    <div class="chart-container" style="height: 200px;">
+      <canvas id="weightMiniChart"></canvas>
+    </div>
+
+    <div class="card" style="padding: 0; overflow-x: auto;">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Peso</th>
+            <th>Nota</th>
+          </tr>
+        </thead>
+        <tbody id="weightTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- FLOATING TIMER BAR -->
+  <div class="floating-timer-bar" id="floatingTimerBar">
+    <div class="timer-progress-track">
+      <div class="timer-progress-fill" id="timerProgressFill"></div>
+    </div>
+    <div class="timer-info">
+      <span class="timer-label" id="timerExerciseName">Recupero</span>
+      <span class="timer-digits" id="timerDigits">00:00</span>
+    </div>
+    <div class="timer-controls">
+      <button class="btn-timer-return" id="btnTimerReturn" title="Torna all'Allenamento">
+        <span>🏋️</span>
+        <span>Torna</span>
+      </button>
+      <button class="btn-timer-mod" id="btnTimerMinus">-15s</button>
+      <button class="btn-timer-mod" id="btnTimerPlus">+15s</button>
+      <button class="btn-timer-skip" id="btnTimerSkip">Salta</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="tabAllenamento">
+      <span class="nav-icon">🏋️</span>
+      <span>Allenamento</span>
+    </button>
+    <button class="nav-item" data-tab="tabSchede">
+      <span class="nav-icon">📋</span>
+      <span>Schede</span>
+    </button>
+    <button class="nav-item" data-tab="tabGrafici">
+      <span class="nav-icon">📈</span>
+      <span>Grafici</span>
+    </button>
+    <button class="nav-item" data-tab="tabPeso">
+      <span class="nav-icon">⚖️</span>
+      <span>Peso</span>
+    </button>
+  </nav>
+
+  <!-- MODALE RIEPILOGO ALLENAMENTO -->
+  <div class="modal-overlay" id="summaryModal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>🏆</span>
+        <span>Allenamento Completato!</span>
+      </div>
+      <p style="color: var(--text-muted); margin-bottom: 16px;">Tutte le serie sono state registrate con successo su Google Sheets.</p>
+      
+      <div class="card" style="background: var(--surface-elevated); margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--text-muted);">Esercizi registrati:</span>
+          <span style="font-weight: 700;" id="sumExercisesCount">0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--text-muted);">BW Riferimento:</span>
+          <span style="font-weight: 700;" id="sumBwUsed">-- kg</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Volume Totale:</span>
+          <span style="font-weight: 800; color: var(--accent-green);" id="sumTotalVolume">0 kg</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Stress & RPE per Settore</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Priorità ai settori più allenati</span>
+        </div>
+        <div id="sumExerciseRpeList" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Generato dinamicamente raggruppato per settore -->
+        </div>
+      </div>
+
+      <button class="btn-primary-cta" id="btnCloseSummaryModal" style="margin: 0;">
+        <span>Ottimo, Chiudi</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODALE ASSISTENTE ISOMETRIE -->
+  <div class="modal-overlay" id="isoModal">
+    <div class="modal-card iso-modal">
+      <div class="iso-stage-label" id="isoStageLabel">Preparati...</div>
+      <div class="iso-countdown" id="isoCountdownDigits">3</div>
+      <div class="iso-sub-target" id="isoSubTarget">Target: 8 secondi</div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-action-small" id="btnIsoStop" style="background: var(--surface-elevated); color: var(--text-muted);">Annulla</button>
+        <button class="btn-action-small" id="btnIsoFinish" style="background: var(--accent-blue); color: #fff; font-weight: 700;">Concludi Serie</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE NUOVO ESERCIZIO CATALOGO -->
+  <div class="modal-overlay" id="catalogModal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>➕</span>
+        <span>Nuovo Esercizio Catalogo</span>
+      </div>
+      
+      <div class="input-group" style="margin-bottom: 12px;">
+        <label class="input-label">Nome Esercizio</label>
+        <input type="text" class="input-dark" id="newCatName" placeholder="es. V-Sit">
+      </div>
+
+      <div class="input-group" style="margin-bottom: 12px;">
+        <label class="input-label">Settore</label>
+        <select class="select-dark" id="newCatSettore">
+          <option value="Spinta">Spinta</option>
+          <option value="Tirata">Tirata</option>
+          <option value="Gambe">Gambe</option>
+          <option value="Addome">Addome</option>
+        </select>
+      </div>
+
+      <div class="input-group" style="margin-bottom: 12px;">
+        <label class="input-label">Unità di Misura</label>
+        <select class="select-dark" id="newCatUnita">
+          <option value="REPS">REPS (Ripetizioni)</option>
+          <option value="SEC">SEC (Secondi Isometria)</option>
+        </select>
+      </div>
+
+      <div class="input-group" style="margin-bottom: 16px;">
+        <label class="input-label">Usa Scala Leve (Tuck..Full)</label>
+        <select class="select-dark" id="newCatUsaLeve">
+          <option value="false">FALSE (Esercizio Standard / Zavorrato)</option>
+          <option value="true">TRUE (Con leve isometriche 1-7)</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-action-small" id="btnCancelCatModal">Annulla</button>
+        <button class="btn-action-small" id="btnSaveCatModal" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">Salva nel Catalogo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE AGGIUNGI ESERCIZIO A SCHEDA -->
+  <div class="modal-overlay" id="addExerciseModal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>➕</span>
+        <span id="addExerciseModalTitle">Aggiungi Esercizio</span>
+      </div>
+
+      <div class="input-group autocomplete-container" style="margin-bottom: 12px;">
+        <label class="input-label">Cerca Esercizio dal Catalogo</label>
+        <input type="text" class="input-dark" id="modalAddExerciseSearch" placeholder="Digita nome o settore per cercare..." autocomplete="off">
+        <input type="hidden" id="modalAddExerciseSelectedVal" value="">
+        <div id="modalAddExerciseSuggestions" class="autocomplete-dropdown" style="display: none;"></div>
+      </div>
+
+      <div class="routine-item-grid" style="margin-bottom: 12px;">
+        <div class="input-group">
+          <label class="input-label">Serie</label>
+          <input type="number" class="input-dark" id="modalAddSerie" value="4" min="1" max="30">
+        </div>
+        <div class="input-group">
+          <label class="input-label" id="modalAddRepsLabel">Reps Target</label>
+          <input type="number" class="input-dark" id="modalAddReps" value="8" min="1" max="500">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Zavorra (kg)</label>
+          <input type="number" step="0.5" class="input-dark" id="modalAddZav" value="0">
+        </div>
+      </div>
+
+      <div class="routine-item-grid" id="modalAddLevaRow" style="grid-template-columns: 1fr 1fr; margin-bottom: 12px;">
+        <div class="input-group" id="modalAddLevaGroup">
+          <label class="input-label">Leva Target</label>
+          <select class="select-dark" id="modalAddLeva"></select>
+        </div>
+        <div class="input-group" id="modalAddRecGroup">
+          <label class="input-label">Recupero (sec)</label>
+          <input type="number" step="10" class="input-dark" id="modalAddRec" value="120" min="10">
+        </div>
+      </div>
+
+      <div class="input-group" style="margin-bottom: 16px;">
+        <label class="input-label">Note Tecniche Fisse (Opzionali)</label>
+        <input type="text" class="input-dark" id="modalAddNote" placeholder="es. Fermo 2s al petto">
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-action-small" id="btnCancelAddExerciseModal" style="background: var(--surface-card); color: var(--text-muted);">Annulla</button>
+        <button class="btn-action-small" id="btnConfirmAddExercise" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">Aggiungi alla Scheda</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE AVVISO RPE MANCANTE -->
+  <div class="modal-overlay" id="missingRpeModal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>⚠️</span>
+        <span>RPE Non Impostato</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 10px; line-height: 1.4;">
+        Hai completato una o più serie senza selezionare lo sforzo percepito (RPE) per i seguenti esercizi:
+      </p>
+      <div id="missingRpeList" style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 16px; font-weight: 700; color: var(--accent-warning); font-size: 0.9rem;"></div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-action-small" id="btnIgnoreMissingRpe" style="background: var(--surface-card); color: var(--text-muted);">Salva Comunque</button>
+        <button class="btn-action-small" id="btnFocusMissingRpe" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">Imposta RPE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE CENTRALE CON SFONDO SFOCATO (BLUR) PER SELEZIONE ALLENAMENTO -->
+  <div class="modal-backdrop-blur" id="routinePickerModal" style="display: none;" onclick="handleRoutinePickerBackdropClick(event)">
+    <div class="modal-routine-dialog" onclick="event.stopPropagation()">
+      <div class="modal-routine-header">
+        <div>
+          <div class="modal-routine-title">Seleziona Allenamento</div>
+          <div class="modal-routine-subtitle">Scegli la scheda da eseguire oggi</div>
+        </div>
+        <button type="button" class="btn-modal-close" onclick="closeRoutinePickerModal()" title="Chiudi">✕</button>
+      </div>
+      <div class="routine-cards-scroll-container" id="routinePickerCardsList">
+        <!-- Generato dinamicamente con anteprima settori ed esercizi -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE CREA NUOVA SCHEDA -->
+  <div class="modal-overlay" id="newRoutineModal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>➕</span>
+        <span>Nuova Scheda</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.86rem; margin-bottom: 14px; line-height: 1.4;">
+        Inserisci il nome per il nuovo programma di allenamento.
+      </p>
+      <div class="input-group" style="margin-bottom: 18px;">
+        <label class="input-label">Nome Scheda</label>
+        <input type="text" class="input-dark" id="newRoutineNameInput" placeholder="es. Allenamento V" autocomplete="off">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-action-small" onclick="closeNewRoutineModal()" style="background: var(--surface-elevated); color: var(--text-muted);">Annulla</button>
+        <button type="button" class="btn-action-small" onclick="submitCreateNewRoutine()" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">Crea Scheda</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE RINOMINA SCHEDA -->
+  <div class="modal-overlay" id="renameRoutineModal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>✏️</span>
+        <span>Rinomina Scheda</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.86rem; margin-bottom: 14px; line-height: 1.4;">
+        Modifica il nome della scheda in lavorazione.
+      </p>
+      <div class="input-group" style="margin-bottom: 18px;">
+        <label class="input-label">Nuovo Nome Scheda</label>
+        <input type="text" class="input-dark" id="renameRoutineNameInput" placeholder="Nuovo nome..." autocomplete="off">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-action-small" onclick="closeRenameRoutineModal()" style="background: var(--surface-elevated); color: var(--text-muted);">Annulla</button>
+        <button type="button" class="btn-action-small" onclick="submitRenameRoutine()" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">Salva Nome</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE ELIMINA SCHEDA -->
+  <div class="modal-overlay" id="deleteRoutineModal">
+    <div class="modal-card">
+      <div class="modal-title" style="color: var(--accent-danger);">
+        <span>🗑️</span>
+        <span>Elimina Scheda</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 10px; line-height: 1.45;">
+        Sei sicuro di voler eliminare definitivamente la scheda:
+      </p>
+      <div id="deleteRoutineConfirmName" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-sm); padding: 12px 14px; font-weight: 700; color: #f87171; font-size: 1.05rem; margin-bottom: 12px;">
+        Allenamento I
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 18px; line-height: 1.4;">
+        ⚠️ La programmazione di questa scheda verrà eliminata. Lo storico delle sessioni passate già completate su Log_Storico rimarrà comunque al sicuro.
+      </p>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-action-small" onclick="closeDeleteRoutineModal()" style="background: var(--surface-elevated); color: var(--text-muted);">Annulla</button>
+        <button type="button" class="btn-action-small" onclick="submitDeleteRoutine()" style="background: var(--accent-danger); color: #ffffff; font-weight: 700;">Elimina Definitivamente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE CONFIGURAZIONE GOOGLE APPS SCRIPT -->
+  <div class="modal-overlay" id="apiConfigModal">
+    <div class="modal-card">
+      <div class="modal-title" style="color: var(--accent-green);">
+        <span>⚙️</span>
+        <span>Connessione Google Sheet</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 12px;">
+        Incolla qui l'URL della Web App di Google Apps Script (l'indirizzo rilasciato dal deployment che termina con <code style="color: var(--accent-blue);">/exec</code>).
+      </p>
+      <div class="input-group" style="margin-bottom: 16px;">
+        <label class="input-label" for="inputGasUrl">URL Web App (Google Apps Script)</label>
+        <input type="url" class="input-dark" id="inputGasUrl" placeholder="https://script.google.com/macros/s/.../exec" style="font-size: 0.82rem; padding: 10px;" autocomplete="off">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-action-small" onclick="closeApiConfigModal()" style="background: var(--surface-elevated); color: var(--text-muted);">Chiudi</button>
+        <button type="button" class="btn-action-small" onclick="submitGasApiUrl()" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">Salva e Connetti</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast">Notifica</div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    // ==========================================
+    // BACKEND ADAPTER (Apps Script / PWA Standalone / APK Android)
+    // ==========================================
+    const STORAGE_KEY_GAS_URL = 'calitracker_gas_api_url';
+    const HARDCODED_GAS_URL = ''; // Opzionale: inserisci l'URL se vuoi fissarlo nel file
+
+    function getGasApiUrl() {
+      if (HARDCODED_GAS_URL && HARDCODED_GAS_URL.trim() !== '') {
+        return HARDCODED_GAS_URL.trim();
+      }
+      return (localStorage.getItem(STORAGE_KEY_GAS_URL) || '').trim();
+    }
+
+    function openApiConfigModal() {
+      const current = getGasApiUrl();
+      const input = document.getElementById('inputGasUrl');
+      if (input) input.value = current;
+      const modal = document.getElementById('apiConfigModal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeApiConfigModal() {
+      const modal = document.getElementById('apiConfigModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function submitGasApiUrl() {
+      const input = document.getElementById('inputGasUrl');
+      const val = input ? input.value.trim() : '';
+      if (!val) {
+        showToast('Inserisci l\'URL fornito da Google Apps Script', 'warning');
+        return;
+      }
+      if (!val.startsWith('https://script.google.com/macros/s/')) {
+        showToast('Attenzione: l\'URL deve iniziare con https://script.google.com/macros/s/', 'warning');
+      }
+      localStorage.setItem(STORAGE_KEY_GAS_URL, val);
+      closeApiConfigModal();
+      showToast('URL Google Sheet salvato!', 'success');
+      setTimeout(() => {
+        initApp();
+      }, 300);
+    }
+
+    // Se stiamo eseguendo fuori da Google Apps Script (es. GitHub Pages o APK Android),
+    // attiviamo il bridge trasparente che traduce google.script.run in chiamate fetch()
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      function createGasRunner(successCb, failureCb) {
+        return new Proxy({ _isPolyfill: true }, {
+          get(target, propKey) {
+            if (propKey === '_isPolyfill') return true;
+            if (propKey === 'withSuccessHandler') return (cb) => createGasRunner(cb, failureCb);
+            if (propKey === 'withFailureHandler') return (cb) => createGasRunner(successCb, cb);
+
+            return async function(...args) {
+              const gasUrl = getGasApiUrl();
+              if (!gasUrl) {
+                console.warn('URL Google Apps Script non configurato.');
+                openApiConfigModal();
+                if (failureCb) failureCb(new Error('URL Google Apps Script mancante. Clicca su ⚙️ in alto per configurarlo.'));
+                return;
+              }
+
+              try {
+                // Invio con text/plain per bypassare il preflight CORS (OPTIONS)
+                const res = await fetch(gasUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  redirect: 'follow',
+                  body: JSON.stringify({ action: propKey, args: args })
+                });
+
+                if (!res.ok) {
+                  throw new Error(`Errore HTTP ${res.status}`);
+                }
+
+                const json = await res.json();
+                if (json && json.success) {
+                  if (successCb) successCb(json.data);
+                } else {
+                  const errMsg = (json && json.error) ? json.error : 'Errore dal backend Google Sheets';
+                  if (failureCb) failureCb(new Error(errMsg));
+                }
+              } catch (err) {
+                console.error('Fetch error verso Apps Script:', err);
+                if (failureCb) failureCb(err);
+              }
+            };
+          }
+        });
+      }
+
+      window.google = { script: { run: createGasRunner() } };
+    }
+
+    // ==========================================
+    // GLOBAL STATE & STORAGE KEYS
+    // ==========================================
+    const STORAGE_KEY_WORKOUT = 'calitracker_active_session_v1';
+    const STORAGE_KEY_SOUND = 'calitracker_sound_enabled';
+
+    let appData = {
+      catalog: [],
+      routines: {},
+      currentBodyWeight: { peso: 68.0, data: '', recentWeights: [] },
+      previousHistoryByRoutine: {},
+      todayIso: ''
+    };
+
+    let activeRoutine = 'Allenamento I';
+    let activeTab = 'tabAllenamento';
+    let soundEnabled = localStorage.getItem(STORAGE_KEY_SOUND) !== 'false';
+
+    // Timer State
+    let timerInterval = null;
+    let timerRemainingSec = 0;
+    let timerTotalSec = 0;
+
+    // Isometry State
+    let isoInterval = null;
+    let isoStage = 'prep'; // 'prep' | 'hold'
+    let isoSecondsElapsed = 0;
+    let isoTargetSec = 0;
+    let currentIsoContext = null;
+
+    // Charts
+    let progressionChartInstance = null;
+    let weightMiniChartInstance = null;
+
+    // ==========================================
+    // AUDIO & VIBRATION SYNTHESIZER
+    // ==========================================
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Auto-unlock on first user touch anywhere
+    document.addEventListener('pointerdown', () => {
+      getAudioContext();
+    }, { once: true });
+
+    function playBeep(frequency = 600, durationMs = 120, type = 'sine') {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (durationMs / 1000));
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + (durationMs / 1000));
+      } catch (e) {
+        console.error('Audio play error:', e);
+      }
+    }
+
+    function triggerVibration(pattern = [100, 50, 100]) {
+      if ('vibrate' in navigator) {
+        try { navigator.vibrate(pattern); } catch (e) {}
+      }
+    }
+
+    // ==========================================
+    // UI HELPERS (TOAST & MODALS)
+    // ==========================================
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3000);
+    }
+
+    function formatTimeSec(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // Helper per calcolare 'quando' senza parentesi per lo Storico Recente
+    function formatWhen(dateStr, todayIso) {
+      if (!dateStr) return '';
+      try {
+        const dSession = new Date(dateStr + 'T00:00:00');
+        const dToday = new Date((todayIso || new Date().toISOString().substring(0, 10)) + 'T00:00:00');
+        const diffTime = dToday.getTime() - dSession.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+        if (diffDays <= 0) return 'Oggi';
+        if (diffDays === 1) return 'Ieri';
+        if (diffDays <= 14) return `${diffDays} giorni fa`;
+        const parts = dateStr.split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
+        return dateStr;
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
+    function formatDaysAgo(dateStr, todayIso) {
+      return formatWhen(dateStr, todayIso);
+    }
+
+    // Classi colore e alone RPE
+    function getRpeGlowClass(rpe) {
+      if (rpe === null || rpe === undefined || isNaN(rpe)) return 'glow-off';
+      if (rpe >= 9.5) return 'glow-red';
+      if (rpe >= 8.5) return 'glow-orange';
+      if (rpe >= 7.0) return 'glow-green';
+      return 'glow-neutral';
+    }
+
+    function getRpeBadgeClass(rpe) {
+      if (rpe === null || rpe === undefined || isNaN(rpe)) return '';
+      if (rpe >= 9.5) return 'rpe-red';
+      if (rpe >= 8.5) return 'rpe-orange';
+      if (rpe >= 7.0) return 'rpe-green';
+      return 'rpe-neutral';
+    }
+
+    function selectBaseRpe(exIdx, num) {
+      const bar = document.getElementById(`rpeBar_${exIdx}`);
+      const badge = document.getElementById(`rpeBadge_${exIdx}`);
+      const halfBtn = document.getElementById(`rpeHalfBtn_${exIdx}`);
+
+      // Regola limite max 10: se 10 è selezionato, disattiva e disabilita +½
+      if (num === 10) {
+        halfBtn.classList.remove('active');
+        halfBtn.disabled = true;
+      } else {
+        halfBtn.disabled = false;
+      }
+
+      const isHalf = halfBtn.classList.contains('active') && num < 10;
+      let effectiveRpe = num + (isHalf ? 0.5 : 0);
+      if (effectiveRpe > 10) effectiveRpe = 10;
+
+      bar.setAttribute('data-base-rpe', num);
+      bar.setAttribute('data-rpe-val', effectiveRpe);
+      badge.textContent = `RPE ${effectiveRpe.toFixed(1)}`;
+
+      bar.querySelectorAll('.btn-rpe').forEach(b => {
+        b.classList.toggle('active', parseInt(b.getAttribute('data-val'), 10) === num);
+      });
+
+      const glowClass = getRpeGlowClass(effectiveRpe);
+      bar.className = `rpe-control-bar ${glowClass}`;
+
+      saveActiveWorkoutToStorage();
+    }
+
+    function toggleHalfRpe(exIdx) {
+      const bar = document.getElementById(`rpeBar_${exIdx}`);
+      const badge = document.getElementById(`rpeBadge_${exIdx}`);
+      const halfBtn = document.getElementById(`rpeHalfBtn_${exIdx}`);
+
+      const baseValAttr = bar.getAttribute('data-base-rpe');
+      if (!baseValAttr || baseValAttr === '') {
+        showToast('Seleziona prima un valore RPE (7, 8, 9)', 'info');
+        halfBtn.classList.remove('active');
+        return;
+      }
+
+      const baseNum = parseFloat(baseValAttr);
+      if (baseNum >= 10) {
+        halfBtn.classList.remove('active');
+        halfBtn.disabled = true;
+        showToast('Limite massimo RPE è 10', 'info');
+        return;
+      }
+
+      const isHalf = halfBtn.classList.toggle('active');
+      let effectiveRpe = baseNum + (isHalf ? 0.5 : 0);
+      if (effectiveRpe > 10) effectiveRpe = 10;
+
+      bar.setAttribute('data-rpe-val', effectiveRpe);
+      badge.textContent = `RPE ${effectiveRpe.toFixed(1)}`;
+
+      const glowClass = getRpeGlowClass(effectiveRpe);
+      bar.className = `rpe-control-bar ${glowClass}`;
+
+      saveActiveWorkoutToStorage();
+    }
+
+    function normalizeSettore(settore, nomeEsercizio = '') {
+      const s = String(settore || '').trim();
+      if (s) {
+        const lower = s.toLowerCase();
+        if (lower === 'core' || lower === 'addom' || lower === 'addome') return 'Addome';
+        if (lower !== 'skill') return s;
+      }
+      const n = String(nomeEsercizio || '').toLowerCase();
+      if (n.includes('lever') || n.includes('tirata') || n.includes('pull') || n.includes('trazioni') || n.includes('muscle')) return 'Tirata';
+      if (n.includes('core') || n.includes('flag') || n.includes('sit') || n.includes('addom') || n.includes('dragon')) return 'Addome';
+      if (n.includes('squat') || n.includes('gambe') || n.includes('leg') || n.includes('pistol')) return 'Gambe';
+      return 'Spinta';
+    }
+
+    // ==========================================
+    // BOOTSTRAP APP DATA
+    // ==========================================
+    function initApp() {
+      updateSoundButtonUI();
+
+      // Se stiamo usando il bridge esterno e l'URL non è ancora configurato, apri subito la configurazione
+      if (typeof google !== 'undefined' && google.script && google.script.run && google.script.run._isPolyfill && !getGasApiUrl()) {
+        openApiConfigModal();
+        return;
+      }
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(onBootstrapSuccess)
+          .withFailureHandler(onBootstrapError)
+          .getAppBootstrapData();
+      } else {
+        // Fallback locale mock per test autonomo
+        console.warn('Apps Script environment non rilevato. Caricamento dati locali mock.');
+        setTimeout(() => {
+          onBootstrapSuccess(getMockBootstrapData());
+        }, 300);
+      }
+    }
+
+    function onBootstrapSuccess(data) {
+      if (!data || !data.success) {
+        const errMsg = (data && data.message) ? data.message : 'Dati non validi';
+        showToast('Errore caricamento: ' + errMsg, 'error');
+        const container = document.getElementById('exerciseCardsContainer');
+        if (container) {
+          container.innerHTML = `
+            <div class="card" style="text-align: center; padding: 30px;">
+              <p style="color: var(--accent-danger); font-weight: 700; margin-bottom: 8px;">Errore caricamento dati</p>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 14px;">${escapeHtml(errMsg)}</p>
+              <button class="btn-action-small" onclick="initApp()">Riprova</button>
+            </div>
+          `;
+        }
+        return;
+      }
+      try {
+        appData = data;
+        const bw = (data.currentBodyWeight && typeof data.currentBodyWeight.peso === 'number') ? data.currentBodyWeight.peso : 68.0;
+        document.getElementById('headerBwBadge').textContent = `BW: ${bw.toFixed(1)} kg`;
+        document.getElementById('currentWeightDisplay').innerHTML = `${bw.toFixed(1)} <span style="font-size: 1.2rem; font-weight: 600; color: var(--text-muted);">kg</span>`;
+
+        renderWeightTab();
+        populateAnalyticsSelectors();
+
+        // Verifica se c'era già una sessione in corso attiva con almeno una serie completata
+        let hasSessionInProgress = false;
+        try {
+          const saved = getSavedSession();
+          if (saved && saved.scheda && appData.routines && appData.routines[saved.scheda] && Array.isArray(saved.exercises)) {
+            hasSessionInProgress = saved.exercises.some(ex => {
+              return ex.completedMap && Object.values(ex.completedMap).some(v => v === true);
+            });
+            if (hasSessionInProgress) {
+              activeRoutine = saved.scheda;
+            }
+          }
+        } catch (e) {
+          console.warn('Errore verifica sessione attiva:', e);
+        }
+
+        // Se activeRoutine non esiste tra le schede, usa la prima disponibile
+        const routineKeys = Object.keys(appData.routines || {});
+        if (!appData.routines[activeRoutine] && routineKeys.length > 0) {
+          activeRoutine = routineKeys[0];
+        }
+
+        updateActiveRoutineDisplay();
+
+        if (activeTab === 'tabAllenamento') {
+          renderLiveWorkout();
+          // All'apertura normale (senza sessione in corso attiva), apri il menù centrale di scelta allenamento con blur
+          if (!hasSessionInProgress && !window.__routinePickerOpenedOnce) {
+            window.__routinePickerOpenedOnce = true;
+            openRoutinePickerModal();
+          }
+        } else if (activeTab === 'tabSchede') {
+          renderRoutineEditor();
+        }
+      } catch (err) {
+        console.error('Errore rendering bootstrap:', err);
+        const container = document.getElementById('exerciseCardsContainer');
+        if (container) {
+          container.innerHTML = `
+            <div class="card" style="text-align: center; padding: 30px;">
+              <p style="color: var(--accent-danger); font-weight: 700; margin-bottom: 8px;">Errore visualizzazione scheda</p>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 14px;">${escapeHtml(err.message)}</p>
+              <button class="btn-action-small" onclick="clearSavedSession(); initApp();">Ripristina Cache e Riprova</button>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function onBootstrapError(err) {
+      console.error('onBootstrapError:', err);
+      const errMsg = err && (err.message || err.toString()) ? (err.message || err.toString()) : 'Connessione non riuscita';
+      showToast('Errore connessione backend: ' + errMsg, 'error');
+      const container = document.getElementById('exerciseCardsContainer');
+      if (container) {
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 30px;">
+            <p style="color: var(--accent-danger); font-weight: 700; margin-bottom: 8px;">Impossibile comunicare con Google Sheets</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 14px;">${escapeHtml(errMsg)}</p>
+            <button class="btn-action-small" onclick="initApp()">Riprova connessione</button>
+          </div>
+        `;
+      }
+    }
+
+    // ==========================================
+    // TAB 1: LIVE WORKOUT ASSISTANT
+    // ==========================================
+    function renderLiveWorkout() {
+      const container = document.getElementById('exerciseCardsContainer');
+      if (!container) return;
+      const routineExercises = (appData && appData.routines && appData.routines[activeRoutine]) || [];
+
+      if (routineExercises.length === 0) {
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 30px;">
+            <p style="color: var(--text-muted); margin-bottom: 8px;">Nessun esercizio programmato in questa scheda.</p>
+            <button class="btn-action-small" onclick="switchTab('tabSchede')">Configura Scheda</button>
+          </div>
+        `;
+        return;
+      }
+
+      try {
+        // Check saved local state
+        let savedSession = null;
+        try {
+          savedSession = getSavedSession();
+        } catch (e) {
+          console.warn('Errore lettura sessione salvata:', e);
+        }
+        const sessionExercises = (savedSession && savedSession.scheda === activeRoutine && Array.isArray(savedSession.exercises)) ? savedSession.exercises : null;
+
+        let html = '';
+        routineExercises.forEach((item, exIdx) => {
+          const catInfo = (appData.catalog && appData.catalog.find(c => c && c.nome && c.nome.toLowerCase() === item.nomeEsercizio.toLowerCase())) || {
+            unitaMisura: 'REPS',
+            usaLeve: false,
+            settore: 'Spinta'
+          };
+          const settoreDisplay = normalizeSettore(catInfo.settore, item.nomeEsercizio);
+
+          const prevHist = (appData.previousHistoryByRoutine && appData.previousHistoryByRoutine[activeRoutine] && appData.previousHistoryByRoutine[activeRoutine][item.nomeEsercizio]) || null;
+
+          // Find saved session item by exercise name
+          let sEx = null;
+          if (sessionExercises) {
+            sEx = sessionExercises.find(e => e && e.nomeEsercizio === item.nomeEsercizio);
+            if (!sEx && sessionExercises[exIdx] && (!sessionExercises[exIdx].nomeEsercizio || sessionExercises[exIdx].nomeEsercizio === item.nomeEsercizio)) {
+              sEx = sessionExercises[exIdx];
+            }
+          }
+
+          // Restore or default inputs with intelligent alignment
+          let curLeva = catInfo.usaLeve ? ((item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : 'Straddle') : 'N/A';
+          let curZav = (item.zavorraTargetKg !== undefined && !isNaN(item.zavorraTargetKg)) ? item.zavorraTargetKg : 0;
+          let curRpe = null;
+          let curNote = '';
+          let seriesValues = [];
+          let completedMap = {};
+
+          if (sEx) {
+            if (catInfo.usaLeve) {
+              curLeva = (sEx.levaUsata && sEx.levaUsata !== 'N/A') ? sEx.levaUsata : ((item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : 'Straddle');
+            } else {
+              curLeva = 'N/A';
+            }
+            curZav = (sEx.zavorraKg !== undefined && !isNaN(parseFloat(sEx.zavorraKg))) ? parseFloat(sEx.zavorraKg) : (item.zavorraTargetKg || 0);
+            if (sEx.rpe !== null && sEx.rpe !== undefined && sEx.rpe !== '' && !isNaN(parseFloat(sEx.rpe))) {
+              curRpe = parseFloat(sEx.rpe);
+            }
+            curNote = sEx.noteGiorno || '';
+            completedMap = (sEx.completedMap && typeof sEx.completedMap === 'object') ? sEx.completedMap : {};
+
+            const savedArr = Array.isArray(sEx.serieArray) ? sEx.serieArray : [];
+            const hasAnyCompleted = Object.keys(completedMap).some(k => completedMap[k] === true);
+
+            if (hasAnyCompleted) {
+              const targetCount = item.serieTarget || 4;
+              const maxLen = Math.max(targetCount, savedArr.length);
+              for (let s = 0; s < maxLen; s++) {
+                if (completedMap[s]) {
+                  seriesValues.push(savedArr[s] !== undefined ? savedArr[s] : item.repsSecTarget);
+                } else if (s < targetCount) {
+                  seriesValues.push(savedArr[s] !== undefined ? savedArr[s] : item.repsSecTarget);
+                }
+              }
+            } else {
+              for (let s = 0; s < item.serieTarget; s++) {
+                seriesValues.push(item.repsSecTarget);
+              }
+              curZav = item.zavorraTargetKg || 0;
+              curLeva = catInfo.usaLeve ? ((item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : 'Straddle') : 'N/A';
+            }
+          } else {
+            for (let s = 0; s < item.serieTarget; s++) {
+              seriesValues.push(item.repsSecTarget);
+            }
+          }
+
+          // Storico recente: 3 righe pulite, isolato rigorosamente per questa scheda
+          let prevHistHtml = '';
+          let prevRpeVal = null;
+          if (prevHist && prevHist.data) {
+            const quando = formatWhen(prevHist.data, appData.todayIso);
+            const levaStr = (prevHist.levaUsata && prevHist.levaUsata !== 'N/A') ? prevHist.levaUsata : '';
+            const zavStr = prevHist.zavorraKg > 0 ? `+${prevHist.zavorraKg}kg` : (prevHist.zavorraKg < 0 ? `${prevHist.zavorraKg}kg` : 'BW');
+            const specStr = levaStr ? `${levaStr} • ${zavStr}` : zavStr;
+            
+            const rpeBadgeStr = (prevHist.rpe && !isNaN(parseFloat(prevHist.rpe)) && parseFloat(prevHist.rpe) > 0)
+              ? `<span class="recap-rpe-badge ${getRpeBadgeClass(parseFloat(prevHist.rpe))}">RPE ${parseFloat(prevHist.rpe)}</span>`
+              : '';
+
+            prevHistHtml = `
+              <div class="last-session-box">
+                <div class="hist-line-spec"><span class="hist-when">${escapeHtml(quando)}</span> • <span>${escapeHtml(specStr)}</span></div>
+                <div class="hist-line-sets"><span class="hist-sets-label">Serie:</span> <span class="hist-sets-val">${escapeHtml(prevHist.dettaglioSerie)}</span></div>
+                ${rpeBadgeStr ? `<div class="hist-line-rpe">${rpeBadgeStr}</div>` : ''}
+              </div>
+            `;
+            if (prevHist.rpe && !isNaN(parseFloat(prevHist.rpe)) && parseFloat(prevHist.rpe) > 0) {
+              prevRpeVal = parseFloat(prevHist.rpe);
+            }
+          } else {
+            prevHistHtml = `
+              <div class="last-session-box hist-box-empty">
+                <span class="badge-first-time">Prima volta</span>
+              </div>
+            `;
+          }
+
+          const baseRpe = (typeof curRpe === 'number') ? Math.floor(curRpe) : null;
+          const hasHalf = (typeof curRpe === 'number') ? ((curRpe - baseRpe) >= 0.4) : false;
+          const glowClass = (typeof curRpe === 'number') ? getRpeGlowClass(curRpe) : 'glow-off';
+          const badgeText = (typeof curRpe === 'number') ? `RPE ${curRpe.toFixed(1)}` : 'RPE --';
+          const rpeAttrVal = (typeof curRpe === 'number') ? curRpe.toFixed(1) : '';
+          const baseAttrVal = (baseRpe !== null) ? baseRpe : '';
+          const isTen = (baseRpe === 10);
+
+          const prevRpeBadgeHtml = (typeof prevRpeVal === 'number')
+            ? `<span class="prev-rpe-badge ${getRpeBadgeClass(prevRpeVal)}">Ultimo RPE: ${prevRpeVal.toFixed(1)}</span>`
+            : `<span class="prev-rpe-badge">Ultimo: Nessuno</span>`;
+
+          html += `
+            <div class="card" id="workoutCard_${exIdx}" data-exercise-idx="${exIdx}" data-exercise-name="${escapeHtml(item.nomeEsercizio)}" data-rest-sec="${item.recuperoSec}" data-unit="${catInfo.unitaMisura}">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">${escapeHtml(item.nomeEsercizio)}</div>
+                  <div class="target-desc">
+                    <span class="highlight">${item.serieTarget} x ${item.repsSecTarget} ${catInfo.unitaMisura}</span>
+                    ${item.levaTarget && item.levaTarget !== 'N/A' && catInfo.usaLeve ? `• <span>${escapeHtml(item.levaTarget)}</span>` : ''}
+                    • <span>${item.zavorraTargetKg > 0 ? '+' + item.zavorraTargetKg + 'kg' : (item.zavorraTargetKg < 0 ? item.zavorraTargetKg + 'kg' : 'Corpo Libero')}</span>
+                    • <span>Rec: ${formatTimeSec(item.recuperoSec)}</span>
+                  </div>
+                </div>
+                <div class="card-badges-wrapper">
+                  <span class="card-badge">${escapeHtml(settoreDisplay)}</span>
+                  <div id="exerciseStatusBadge_${exIdx}"></div>
+                </div>
+              </div>
+
+              ${prevHistHtml}
+
+              <div class="controls-row" style="${catInfo.usaLeve ? '' : 'grid-template-columns: 1fr;'}">
+                ${catInfo.usaLeve ? `
+                  <div class="input-group">
+                    <label class="input-label">Leva Sessione</label>
+                    <select class="select-dark ex-leva" onchange="saveActiveWorkoutToStorage()">
+                      ${getLeveOptionsHtml(curLeva, true)}
+                    </select>
+                  </div>
+                ` : `<input type="hidden" class="ex-leva" value="N/A">`}
+                <div class="input-group">
+                  <label class="input-label">Zavorra (Kg)</label>
+                  <input type="number" step="0.5" inputmode="decimal" class="input-dark ex-zavorra" value="${curZav}" onchange="saveActiveWorkoutToStorage()">
+                </div>
+              </div>
+
+              ${catInfo.unitaMisura === 'SEC' ? `
+                <button class="btn-iso-start" onclick="startIsometricAssistant(${exIdx})">
+                  <span>⏱️ Avvia Isometria Serie Attiva</span>
+                </button>
+              ` : ''}
+
+              <div class="series-grid" id="seriesGrid_${exIdx}">
+                ${renderSeriesRowsHtml(exIdx, seriesValues, catInfo.unitaMisura, completedMap)}
+              </div>
+
+              <div class="series-actions">
+                <button class="btn-action-small" onclick="addSeriesRow(${exIdx})">+ Aggiungi Serie</button>
+                <button class="btn-action-small" onclick="removeSeriesRow(${exIdx})">- Rimuovi Serie</button>
+              </div>
+
+              <div class="card-footer-row">
+                <div class="rpe-picker-wrapper">
+                  <div class="rpe-header-row">
+                    <label class="input-label" style="margin-bottom: 0;">Sforzo Percepito (RPE)</label>
+                    ${prevRpeBadgeHtml}
+                  </div>
+                  <div class="rpe-control-bar ${glowClass}" id="rpeBar_${exIdx}" data-base-rpe="${baseAttrVal}" data-rpe-val="${rpeAttrVal}">
+                    <span class="rpe-badge-value" id="rpeBadge_${exIdx}">${badgeText}</span>
+                    <div class="rpe-buttons">
+                      <button type="button" class="btn-rpe ${baseRpe === 7 ? 'active' : ''}" data-val="7" onclick="selectBaseRpe(${exIdx}, 7)">7</button>
+                      <button type="button" class="btn-rpe ${baseRpe === 8 ? 'active' : ''}" data-val="8" onclick="selectBaseRpe(${exIdx}, 8)">8</button>
+                      <button type="button" class="btn-rpe ${baseRpe === 9 ? 'active' : ''}" data-val="9" onclick="selectBaseRpe(${exIdx}, 9)">9</button>
+                      <button type="button" class="btn-rpe ${baseRpe === 10 ? 'active' : ''}" data-val="10" onclick="selectBaseRpe(${exIdx}, 10)">10</button>
+                      <button type="button" class="btn-rpe-half ${hasHalf ? 'active' : ''}" id="rpeHalfBtn_${exIdx}" onclick="toggleHalfRpe(${exIdx})" ${isTen ? 'disabled' : ''}>+½</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label class="input-label">Note Sessione</label>
+                  <input type="text" class="input-dark ex-note" placeholder="es. Ottima spinta, fermo 1s" value="${escapeHtml(curNote)}" oninput="saveActiveWorkoutToStorage()">
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+        updateCardsActiveAndCompletedStatus();
+      } catch (err) {
+        console.error('Errore renderLiveWorkout:', err);
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 30px;">
+            <p style="color: var(--accent-danger); font-weight: 700; margin-bottom: 8px;">Errore durante la creazione della scheda</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 14px;">${escapeHtml(err.message)}</p>
+            <button class="btn-action-small" onclick="clearSavedSession(); renderLiveWorkout();">Reimposta Scheda</button>
+          </div>
+        `;
+      }
+    }
+
+    // Aggiorna lo stato visivo (⚡ IN CORSO / Completato ✓) sulle card in modo reattivo
+    function updateCardsActiveAndCompletedStatus() {
+      const cards = document.querySelectorAll('#exerciseCardsContainer .card');
+      let firstIncompleteFound = false;
+
+      cards.forEach((card, idx) => {
+        const rows = card.querySelectorAll('.series-row');
+        const totalRows = rows.length;
+        const completedRows = card.querySelectorAll('.series-row.completed').length;
+        const statusBadgeEl = card.querySelector(`#exerciseStatusBadge_${idx}`);
+
+        const isFullyCompleted = (totalRows > 0 && completedRows === totalRows);
+
+        if (isFullyCompleted) {
+          card.classList.add('completed-exercise');
+          card.classList.remove('active-exercise');
+          if (statusBadgeEl) {
+            statusBadgeEl.innerHTML = `<span class="status-badge status-completed">Completato ✓</span>`;
+          }
+        } else {
+          card.classList.remove('completed-exercise');
+          if (!firstIncompleteFound) {
+            firstIncompleteFound = true;
+            card.classList.add('active-exercise');
+            if (statusBadgeEl) {
+              statusBadgeEl.innerHTML = `<span class="status-badge status-in-progress">⚡ IN CORSO</span>`;
+            }
+          } else {
+            card.classList.remove('active-exercise');
+            if (statusBadgeEl) {
+              statusBadgeEl.innerHTML = '';
+            }
+          }
+        }
+      });
+    }
+
+    function renderSeriesRowsHtml(exIdx, seriesValues, unit, completedMap) {
+      return seriesValues.map((val, sIdx) => {
+        const isDone = completedMap[sIdx] === true;
+        return `
+          <div class="series-row ${isDone ? 'completed' : ''}" id="seriesRow_${exIdx}_${sIdx}">
+            <div class="series-num">${sIdx + 1}</div>
+            <div class="series-input-wrapper">
+              <input type="number" inputmode="decimal" class="series-input" value="${val}" onchange="saveActiveWorkoutToStorage()" id="seriesInput_${exIdx}_${sIdx}">
+              <span class="series-unit">${unit}</span>
+            </div>
+            <button class="btn-check" onclick="toggleSeriesCheck(${exIdx}, ${sIdx})">
+              ${isDone ? '✓' : ''}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleSeriesCheck(exIdx, sIdx) {
+      const row = document.getElementById(`seriesRow_${exIdx}_${sIdx}`);
+      const btn = row.querySelector('.btn-check');
+      const isCompleted = row.classList.toggle('completed');
+      btn.textContent = isCompleted ? '✓' : '';
+
+      if (isCompleted) {
+        playBeep(880, 150);
+        triggerVibration([120]);
+
+        // Start Auto Rest Timer
+        const card = document.querySelector(`[data-exercise-idx="${exIdx}"]`);
+        const restSec = parseInt(card.getAttribute('data-rest-sec'), 10) || 120;
+        const exName = card.getAttribute('data-exercise-name');
+        startRestTimer(restSec, exName);
+      }
+
+      updateCardsActiveAndCompletedStatus();
+      saveActiveWorkoutToStorage();
+    }
+
+    function addSeriesRow(exIdx) {
+      const grid = document.getElementById(`seriesGrid_${exIdx}`);
+      const card = document.querySelector(`[data-exercise-idx="${exIdx}"]`);
+      const unit = card.getAttribute('data-unit');
+      const currentRows = grid.querySelectorAll('.series-row');
+      const newIdx = currentRows.length;
+      const lastVal = newIdx > 0 ? grid.querySelector(`#seriesInput_${exIdx}_${newIdx - 1}`).value : 8;
+
+      const newRowHtml = `
+        <div class="series-row" id="seriesRow_${exIdx}_${newIdx}">
+          <div class="series-num">${newIdx + 1}</div>
+          <div class="series-input-wrapper">
+            <input type="number" inputmode="decimal" class="series-input" value="${lastVal}" onchange="saveActiveWorkoutToStorage()" id="seriesInput_${exIdx}_${newIdx}">
+            <span class="series-unit">${unit}</span>
+          </div>
+          <button class="btn-check" onclick="toggleSeriesCheck(${exIdx}, ${newIdx})"></button>
+        </div>
+      `;
+      grid.insertAdjacentHTML('beforeend', newRowHtml);
+      updateCardsActiveAndCompletedStatus();
+      saveActiveWorkoutToStorage();
+    }
+
+    function removeSeriesRow(exIdx) {
+      const grid = document.getElementById(`seriesGrid_${exIdx}`);
+      const rows = grid.querySelectorAll('.series-row');
+      if (rows.length > 1) {
+        rows[rows.length - 1].remove();
+        updateCardsActiveAndCompletedStatus();
+        saveActiveWorkoutToStorage();
+      }
+    }
+
+    function getLeveOptionsHtml(selectedLeva, usaLeve) {
+      if (!usaLeve) {
+        return `<option value="N/A" selected>N/A</option>`;
+      }
+      const leve = ['Tuck', 'Adv Tuck', 'One Leg', 'Half Lay Straddle', 'Straddle', 'Half Lay', 'Full'];
+      const activeLeva = (selectedLeva && selectedLeva !== 'N/A') ? selectedLeva : 'Straddle';
+      return leve.map(l => `<option value="${l}" ${l === activeLeva ? 'selected' : ''}>${l}</option>`).join('');
+    }
+
+    function getRpeOptionsHtml(selectedRpe) {
+      const rpeSteps = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+      return rpeSteps.map(r => `<option value="${r}" ${r == selectedRpe ? 'selected' : ''}>${r}</option>`).join('');
+    }
+
+    // ==========================================
+    // FLOATING REST TIMER
+    // ==========================================
+    function updateTimerProgressBar(overridePercent) {
+      const fillEl = document.getElementById('timerProgressFill');
+      if (!fillEl) return;
+      if (overridePercent !== undefined) {
+        fillEl.style.width = `${overridePercent}%`;
+        return;
+      }
+      const percent = (timerTotalSec > 0) ? Math.max(0, Math.min(100, (timerRemainingSec / timerTotalSec) * 100)) : 0;
+      fillEl.style.width = `${percent}%`;
+    }
+
+    function updateTimerReturnButton() {
+      const btn = document.getElementById('btnTimerReturn');
+      if (!btn) return;
+      if (activeTab !== 'tabAllenamento') {
+        btn.classList.add('show');
+      } else {
+        btn.classList.remove('show');
+      }
+    }
+
+    function startRestTimer(durationSeconds, exerciseName) {
+      clearInterval(timerInterval);
+      timerRemainingSec = durationSeconds;
+      timerTotalSec = Math.max(1, durationSeconds);
+
+      document.getElementById('timerExerciseName').textContent = `Recupero: ${exerciseName}`;
+      document.getElementById('timerDigits').textContent = formatTimeSec(timerRemainingSec);
+      document.getElementById('timerDigits').classList.remove('urgent');
+      updateTimerProgressBar(100);
+      updateTimerReturnButton();
+      document.getElementById('floatingTimerBar').classList.add('active');
+
+      timerInterval = setInterval(() => {
+        timerRemainingSec--;
+        updateTimerProgressBar();
+        if (timerRemainingSec <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('timerDigits').textContent = '00:00';
+          updateTimerProgressBar(0);
+          playBeep(1000, 400);
+          triggerVibration([200, 100, 200]);
+          showToast('Tempo di recupero terminato! 🚀', 'success');
+          setTimeout(() => {
+            document.getElementById('floatingTimerBar').classList.remove('active');
+          }, 3500);
+        } else {
+          document.getElementById('timerDigits').textContent = formatTimeSec(timerRemainingSec);
+          if (timerRemainingSec <= 5) {
+            document.getElementById('timerDigits').classList.add('urgent');
+            playBeep(440, 60);
+          }
+        }
+      }, 1000);
+    }
+
+    document.getElementById('btnTimerReturn').addEventListener('click', () => {
+      switchTab('tabAllenamento');
+    });
+
+    document.getElementById('btnTimerPlus').addEventListener('click', () => {
+      timerRemainingSec += 15;
+      timerTotalSec = Math.max(timerTotalSec, timerRemainingSec);
+      document.getElementById('timerDigits').textContent = formatTimeSec(timerRemainingSec);
+      updateTimerProgressBar();
+    });
+
+    document.getElementById('btnTimerMinus').addEventListener('click', () => {
+      timerRemainingSec = Math.max(0, timerRemainingSec - 15);
+      document.getElementById('timerDigits').textContent = formatTimeSec(timerRemainingSec);
+      updateTimerProgressBar();
+    });
+
+    function stopRestTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timerRemainingSec = 0;
+      const bar = document.getElementById('floatingTimerBar');
+      if (bar) bar.classList.remove('active');
+      updateTimerProgressBar(0);
+      updateTimerReturnButton();
+    }
+
+    document.getElementById('btnTimerSkip').addEventListener('click', stopRestTimer);
+
+    // ==========================================
+    // ISOMETRIC ASSISTANT (COUNTDOWN & BEEP)
+    // ==========================================
+    function startIsometricAssistant(exIdx) {
+      const card = document.querySelector(`[data-exercise-idx="${exIdx}"]`);
+      const grid = document.getElementById(`seriesGrid_${exIdx}`);
+      const rows = grid.querySelectorAll('.series-row');
+
+      // Trova la prima serie non completata
+      let targetRowIdx = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (!rows[i].classList.contains('completed')) {
+          targetRowIdx = i;
+          break;
+        }
+      }
+      if (targetRowIdx === -1) targetRowIdx = 0;
+
+      const inputVal = parseInt(document.getElementById(`seriesInput_${exIdx}_${targetRowIdx}`).value, 10) || 8;
+      currentIsoContext = { exIdx, seriesIdx: targetRowIdx, targetSec: inputVal };
+
+      isoStage = 'prep';
+      let prepCount = 3;
+      document.getElementById('isoStageLabel').textContent = 'Preparati agli attrezzi...';
+      document.getElementById('isoCountdownDigits').textContent = prepCount;
+      document.getElementById('isoSubTarget').textContent = `Serie ${targetRowIdx + 1} - Target: ${inputVal}s`;
+      document.getElementById('isoModal').classList.add('active');
+
+      playBeep(523, 100);
+
+      clearInterval(isoInterval);
+      isoInterval = setInterval(() => {
+        if (isoStage === 'prep') {
+          prepCount--;
+          if (prepCount > 0) {
+            document.getElementById('isoCountdownDigits').textContent = prepCount;
+            playBeep(523, 100);
+          } else {
+            // Inizia la tenuta
+            isoStage = 'hold';
+            isoSecondsElapsed = 0;
+            document.getElementById('isoStageLabel').textContent = '🔥 TIENI L\'ISOMETRIA!';
+            document.getElementById('isoCountdownDigits').textContent = '0s';
+            playBeep(880, 250);
+            triggerVibration([150]);
+          }
+        } else if (isoStage === 'hold') {
+          isoSecondsElapsed++;
+          document.getElementById('isoCountdownDigits').textContent = `${isoSecondsElapsed}s`;
+
+          if (isoSecondsElapsed === currentIsoContext.targetSec) {
+            playBeep(1200, 350);
+            triggerVibration([200, 100, 200]);
+            document.getElementById('isoStageLabel').textContent = '🎯 TARGET RAGGIUNTO!';
+          } else {
+            playBeep(659, 40);
+          }
+        }
+      }, 1000);
+    }
+
+    document.getElementById('btnIsoFinish').addEventListener('click', () => {
+      clearInterval(isoInterval);
+      document.getElementById('isoModal').classList.remove('active');
+
+      if (currentIsoContext && isoStage === 'hold') {
+        const { exIdx, seriesIdx, targetSec } = currentIsoContext;
+        // Se raggiunge o supera il target, assegna targetSec; se si ferma prima, assegna tempo effettivo
+        const recordedSec = (isoSecondsElapsed >= targetSec) ? targetSec : isoSecondsElapsed;
+        document.getElementById(`seriesInput_${exIdx}_${seriesIdx}`).value = recordedSec;
+        toggleSeriesCheck(exIdx, seriesIdx);
+      }
+    });
+
+    document.getElementById('btnIsoStop').addEventListener('click', () => {
+      clearInterval(isoInterval);
+      document.getElementById('isoModal').classList.remove('active');
+    });
+
+    // ==========================================
+    // SAVE WORKOUT SESSION
+    // ==========================================
+    let bypassMissingRpeConfirmation = false;
+
+    document.getElementById('btnIgnoreMissingRpe').addEventListener('click', () => {
+      document.getElementById('missingRpeModal').classList.remove('active');
+      bypassMissingRpeConfirmation = true;
+      document.getElementById('btnSalvaAllenamento').click();
+    });
+
+    document.getElementById('btnFocusMissingRpe').addEventListener('click', () => {
+      document.getElementById('missingRpeModal').classList.remove('active');
+      const cards = document.querySelectorAll('#exerciseCardsContainer .card');
+      for (let card of cards) {
+        const rpeBar = card.querySelector('.rpe-control-bar');
+        const rpeAttr = rpeBar ? rpeBar.getAttribute('data-rpe-val') : '';
+        if (!rpeAttr) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          rpeBar.style.boxShadow = '0 0 16px rgba(245, 158, 11, 0.8)';
+          setTimeout(() => { rpeBar.style.boxShadow = ''; }, 2000);
+          break;
+        }
+      }
+    });
+
+    document.getElementById('btnSalvaAllenamento').addEventListener('click', () => {
+      const cards = document.querySelectorAll('#exerciseCardsContainer .card');
+      const exercisesPayload = [];
+
+      cards.forEach(card => {
+        const exIdx = card.getAttribute('data-exercise-idx');
+        const nomeEsercizio = card.getAttribute('data-exercise-name');
+        const levaUsata = card.querySelector('.ex-leva').value;
+        const zavorraKg = parseFloat(card.querySelector('.ex-zavorra').value) || 0;
+        const rpeBar = card.querySelector('.rpe-control-bar');
+        const rpeAttr = rpeBar ? rpeBar.getAttribute('data-rpe-val') : '';
+        const rpe = (rpeAttr !== null && rpeAttr !== '' && !isNaN(parseFloat(rpeAttr))) ? parseFloat(rpeAttr) : null;
+        const noteGiorno = card.querySelector('.ex-note').value.trim();
+
+        const grid = document.getElementById(`seriesGrid_${exIdx}`);
+        const rows = grid.querySelectorAll('.series-row');
+        const completedSeries = [];
+
+        rows.forEach(r => {
+          if (r.classList.contains('completed')) {
+            const input = r.querySelector('.series-input');
+            completedSeries.push(parseFloat(input.value) || 0);
+          }
+        });
+
+        if (completedSeries.length > 0) {
+          exercisesPayload.push({
+            nomeEsercizio,
+            levaUsata,
+            zavorraKg,
+            serieArray: completedSeries,
+            rpe,
+            noteGiorno
+          });
+        }
+      });
+
+      if (exercisesPayload.length === 0) {
+        showToast('Completa almeno una serie per salvare!', 'error');
+        return;
+      }
+
+      // Verifica se ci sono esercizi completati senza RPE impostato
+      if (!bypassMissingRpeConfirmation) {
+        const missingRpeExercises = exercisesPayload.filter(ex => ex.rpe === null);
+        if (missingRpeExercises.length > 0) {
+          const listHtml = missingRpeExercises.map(ex => `• ${escapeHtml(ex.nomeEsercizio)}`).join('<br>');
+          document.getElementById('missingRpeList').innerHTML = listHtml;
+          document.getElementById('missingRpeModal').classList.add('active');
+          return;
+        }
+      }
+      bypassMissingRpeConfirmation = false;
+
+      const payload = {
+        dataISO: appData.todayIso,
+        schedaSvolta: activeRoutine,
+        exercises: exercisesPayload
+      };
+
+      const btn = document.getElementById('btnSalvaAllenamento');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> <span>Salvataggio in corso...</span>';
+
+      // Interrompi e nascondi subito il timer di recupero attivo al salvataggio
+      stopRestTimer();
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.disabled = false;
+            btn.innerHTML = '<span>💾 Salva Allenamento</span>';
+            onWorkoutSavedSuccess(res, exercisesPayload);
+          })
+          .withFailureHandler(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<span>💾 Salva Allenamento</span>';
+            showToast('Errore salvataggio: ' + err.message, 'error');
+          })
+          .saveWorkoutSession(payload);
+      } else {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<span>💾 Salva Allenamento</span>';
+          onWorkoutSavedSuccess({ success: true, insertedCount: exercisesPayload.length, totalVolumeSessione: 3420, bwUsato: 68.0 }, exercisesPayload);
+        }, 800);
+      }
+    });
+
+    function onWorkoutSavedSuccess(res, exercisesPayload) {
+      stopRestTimer();
+      clearSavedSession();
+      showToast('Allenamento registrato con successo!', 'success');
+
+      // Mostra modale riepilogo
+      document.getElementById('sumExercisesCount').textContent = exercisesPayload.length;
+      const bwUsed = (res && typeof res.bwUsato === 'number') ? res.bwUsato : ((appData.currentBodyWeight && appData.currentBodyWeight.peso) || 70.0);
+      document.getElementById('sumBwUsed').textContent = `${bwUsed.toFixed(1)} kg`;
+      document.getElementById('sumTotalVolume').textContent = `${((res && res.totalVolumeSessione) || 0).toLocaleString()} kg`;
+
+      // Raggruppamento per settore e ordinamento per numero di esercizi decrescente
+      // Permette di visualizzare subito il settore principale/più stressato della sessione
+      const sectorGroups = {};
+      exercisesPayload.forEach((ex, origIdx) => {
+        const catItem = (appData.catalogExercises || []).find(c => c.nomeEsercizio.toLowerCase() === ex.nomeEsercizio.toLowerCase());
+        const rawSettore = catItem ? catItem.settore : '';
+        const settore = normalizeSettore(rawSettore, ex.nomeEsercizio);
+        if (!sectorGroups[settore]) {
+          sectorGroups[settore] = [];
+        }
+        sectorGroups[settore].push({ ...ex, origIdx });
+      });
+
+      const sortedSectors = Object.keys(sectorGroups).sort((a, b) => {
+        const diff = sectorGroups[b].length - sectorGroups[a].length;
+        if (diff !== 0) return diff;
+        return a.localeCompare(b);
+      });
+
+      const sectorIcons = {
+        'Spinta': '🤸',
+        'Tirata': '🧗',
+        'Gambe': '🦵',
+        'Addome': '🫃🏻'
+      };
+
+      const rpeListEl = document.getElementById('sumExerciseRpeList');
+      if (rpeListEl) {
+        if (sortedSectors.length === 0) {
+          rpeListEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 12px;">Nessun dato registrato</div>`;
+        } else {
+          rpeListEl.innerHTML = sortedSectors.map(settore => {
+            const exs = sectorGroups[settore];
+            const icon = sectorIcons[settore] || '🎯';
+
+            let totSetsSector = 0;
+            let totVolSector = 0;
+            let rpeSum = 0;
+            let rpeCount = 0;
+
+            const exRowsHtml = exs.map(ex => {
+              const rpeVal = (ex.rpe !== null && ex.rpe !== undefined && !isNaN(parseFloat(ex.rpe))) ? parseFloat(ex.rpe) : null;
+              if (rpeVal !== null) {
+                rpeSum += rpeVal;
+                rpeCount++;
+              }
+              const rpeClass = rpeVal !== null ? getRpeBadgeClass(rpeVal) : '';
+              const intensityPercent = rpeVal !== null ? Math.min(100, Math.max(15, ((rpeVal - 5) / 5) * 100)) : 0;
+              const rpeLabel = rpeVal !== null ? `RPE ${rpeVal.toFixed(1)}` : 'RPE --';
+              const numSets = (ex.serieArray || []).length;
+              totSetsSector += numSets;
+              const totRepsSec = (ex.serieArray || []).reduce((acc, c) => acc + c, 0);
+
+              // Per le isometrie (SEC) non calcolare tonnellaggio fittizio in kg
+              const catEx = (appData.catalog && appData.catalog.find(c => c && c.nome && c.nome.toLowerCase() === ex.nomeEsercizio.toLowerCase())) || { unitaMisura: 'REPS' };
+              const isSec = (catEx.unitaMisura === 'SEC');
+              let volExStr = '';
+              if (isSec) {
+                volExStr = `Vol: ${totRepsSec} sec`;
+              } else {
+                const caricoTot = bwUsed + (ex.zavorraKg || 0);
+                const volEx = Math.round(caricoTot * totRepsSec * 10) / 10;
+                totVolSector += volEx;
+                volExStr = `Vol: ${volEx.toLocaleString()} kg`;
+              }
+
+              const zavLabel = ex.zavorraKg > 0 ? `+${ex.zavorraKg}kg` : (ex.zavorraKg < 0 ? `${ex.zavorraKg}kg` : 'BW');
+
+              return `
+                <div class="recap-exercise-row">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">${ex.nomeEsercizio}</span>
+                    <span class="recap-rpe-badge ${rpeClass}">${rpeLabel}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+                    <span>${numSets} serie (${(ex.serieArray || []).join(' | ')}) • ${zavLabel}</span>
+                    <span>${volExStr}</span>
+                  </div>
+                  <div class="rpe-progress-track">
+                    <div class="rpe-progress-fill ${rpeClass}" style="width: ${intensityPercent}%;"></div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            const avgRpe = rpeCount > 0 ? (rpeSum / rpeCount) : null;
+            const avgRpeClass = avgRpe !== null ? getRpeBadgeClass(avgRpe) : '';
+            const avgRpeBadge = avgRpe !== null 
+              ? `<span class="recap-rpe-badge ${avgRpeClass}" title="RPE Medio Settore">RPE Med: ${avgRpe.toFixed(1)}</span>`
+              : `<span class="recap-rpe-badge" style="color: var(--text-muted); background: rgba(255,255,255,0.05);">RPE --</span>`;
+
+            return `
+              <div class="recap-sector-block">
+                <div class="recap-sector-header">
+                  <div class="recap-sector-title">
+                    <span style="font-size: 1.15rem;">${icon}</span>
+                    <span class="recap-sector-name">${settore}</span>
+                    <span class="recap-sector-badge">${exs.length} ${exs.length === 1 ? 'esercizio' : 'esercizi'} • ${totSetsSector} serie</span>
+                  </div>
+                  <div class="recap-sector-stats">
+                    ${avgRpeBadge}
+                    <span class="recap-sector-vol">${Math.round(totVolSector).toLocaleString()} kg</span>
+                  </div>
+                </div>
+                <div class="recap-sector-list">
+                  ${exRowsHtml}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      document.getElementById('summaryModal').classList.add('active');
+
+      // Ricarica bootstrap per aggiornare cronologia
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(onBootstrapSuccess).getAppBootstrapData();
+      }
+    }
+
+    document.getElementById('btnCloseSummaryModal').addEventListener('click', () => {
+      document.getElementById('summaryModal').classList.remove('active');
+      renderLiveWorkout();
+    });
+
+    // ==========================================
+    // LOCAL STORAGE PERSISTENCE
+    // ==========================================
+    function saveActiveWorkoutToStorage() {
+      const cards = document.querySelectorAll('#exerciseCardsContainer .card');
+      const exercises = [];
+
+      cards.forEach(card => {
+        const exIdx = card.getAttribute('data-exercise-idx');
+        const nomeEsercizio = card.getAttribute('data-exercise-name');
+        const levaUsata = card.querySelector('.ex-leva').value;
+        const zavorraKg = parseFloat(card.querySelector('.ex-zavorra').value) || 0;
+        const rpeBar = card.querySelector('.rpe-control-bar');
+        const rpeAttr = rpeBar ? rpeBar.getAttribute('data-rpe-val') : '';
+        const rpe = (rpeAttr !== null && rpeAttr !== '' && !isNaN(parseFloat(rpeAttr))) ? parseFloat(rpeAttr) : null;
+        const noteGiorno = card.querySelector('.ex-note').value;
+
+        const grid = document.getElementById(`seriesGrid_${exIdx}`);
+        const rows = grid.querySelectorAll('.series-row');
+        const serieArray = [];
+        const completedMap = {};
+
+        rows.forEach((r, idx) => {
+          const input = r.querySelector('.series-input');
+          serieArray.push(parseFloat(input.value) || 0);
+          if (r.classList.contains('completed')) {
+            completedMap[idx] = true;
+          }
+        });
+
+        exercises.push({
+          nomeEsercizio,
+          levaUsata,
+          zavorraKg,
+          rpe,
+          noteGiorno,
+          serieArray,
+          completedMap
+        });
+      });
+
+      const sessionObj = {
+        scheda: activeRoutine,
+        date: appData.todayIso,
+        exercises
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY_WORKOUT, JSON.stringify(sessionObj));
+      } catch (e) {}
+    }
+
+    function syncActiveWorkoutAfterRoutineEdit(schedaName, newExercises) {
+      const saved = getSavedSession();
+      if (!saved || saved.scheda !== schedaName) return;
+
+      const oldExercises = Array.isArray(saved.exercises) ? saved.exercises : [];
+      const updatedSessionExercises = newExercises.map(item => {
+        const existing = oldExercises.find(e => e.nomeEsercizio === item.nomeEsercizio);
+        if (!existing) {
+          const sArr = [];
+          for (let s = 0; s < item.serieTarget; s++) sArr.push(item.repsSecTarget);
+          return {
+            nomeEsercizio: item.nomeEsercizio,
+            levaUsata: item.levaTarget || 'N/A',
+            zavorraKg: item.zavorraTargetKg || 0,
+            rpe: null,
+            noteGiorno: '',
+            serieArray: sArr,
+            completedMap: {}
+          };
+        }
+
+        const completedMap = existing.completedMap || {};
+        const hasCompleted = Object.values(completedMap).some(v => v === true);
+        const oldArr = Array.isArray(existing.serieArray) ? existing.serieArray : [];
+        const newArr = [];
+
+        if (hasCompleted) {
+          const targetLen = item.serieTarget || 4;
+          const maxLen = Math.max(targetLen, oldArr.length);
+          for (let s = 0; s < maxLen; s++) {
+            if (completedMap[s]) {
+              newArr.push(oldArr[s] !== undefined ? oldArr[s] : item.repsSecTarget);
+            } else if (s < targetLen) {
+              newArr.push(oldArr[s] !== undefined ? oldArr[s] : item.repsSecTarget);
+            }
+          }
+          return {
+            ...existing,
+            nomeEsercizio: item.nomeEsercizio,
+            serieArray: newArr
+          };
+        } else {
+          for (let s = 0; s < item.serieTarget; s++) newArr.push(item.repsSecTarget);
+          return {
+            ...existing,
+            nomeEsercizio: item.nomeEsercizio,
+            levaUsata: item.levaTarget || 'N/A',
+            zavorraKg: item.zavorraTargetKg || 0,
+            serieArray: newArr,
+            completedMap: {}
+          };
+        }
+      });
+
+      saved.exercises = updatedSessionExercises;
+      try {
+        localStorage.setItem(STORAGE_KEY_WORKOUT, JSON.stringify(saved));
+      } catch (e) {}
+    }
+
+    function getSavedSession() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY_WORKOUT);
+        return data ? JSON.parse(data) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function clearSavedSession() {
+      try {
+        localStorage.removeItem(STORAGE_KEY_WORKOUT);
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // ROUTINE PICKER & MANAGEMENT (CENTRAL BLUR MODAL)
+    // ==========================================
+    function updateActiveRoutineDisplay() {
+      const activeEl = document.getElementById('activeRoutineDisplayName');
+      if (activeEl) {
+        activeEl.textContent = activeRoutine || 'Seleziona Allenamento';
+      }
+      const editorEl = document.getElementById('schedaEditorCurrentName');
+      if (editorEl) {
+        editorEl.textContent = activeRoutine || 'Nessuna scheda';
+      }
+    }
+
+    function openRoutinePickerModal() {
+      const modal = document.getElementById('routinePickerModal');
+      if (!modal) return;
+      renderRoutinePickerModalContent();
+      modal.style.display = 'flex';
+    }
+
+    function closeRoutinePickerModal() {
+      const modal = document.getElementById('routinePickerModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function handleRoutinePickerBackdropClick(e) {
+      if (activeRoutine && appData && appData.routines && appData.routines[activeRoutine]) {
+        closeRoutinePickerModal();
+      }
+    }
+
+    function selectRoutineFromPicker(schedaName) {
+      if (!schedaName) return;
+      activeRoutine = schedaName;
+      updateActiveRoutineDisplay();
+      closeRoutinePickerModal();
+
+      if (activeTab === 'tabAllenamento') {
+        renderLiveWorkout();
+      } else if (activeTab === 'tabSchede') {
+        renderRoutineEditor();
+      }
+    }
+
+    function renderRoutinePickerModalContent() {
+      const listContainer = document.getElementById('routinePickerCardsList');
+      if (!listContainer) return;
+
+      const routines = (appData && appData.routines) ? appData.routines : {};
+      const routineKeys = Object.keys(routines);
+
+      const cardsHtml = routineKeys.map(schedaName => {
+        const exercises = routines[schedaName] || [];
+        const isActive = (schedaName === activeRoutine);
+
+        // Calcolo conteggio muscoli e categorie
+        const sectorCounts = { Spinta: 0, Tirata: 0, Gambe: 0, Addome: 0 };
+        exercises.forEach(ex => {
+          const cat = (appData.catalog || []).find(c => c && c.nome && c.nome.toLowerCase() === (ex.nomeEsercizio || '').toLowerCase());
+          const sec = normalizeSettore(cat ? cat.settore : '', ex.nomeEsercizio);
+          if (sectorCounts[sec] !== undefined) {
+            sectorCounts[sec]++;
+          } else {
+            sectorCounts[sec] = 1;
+          }
+        });
+
+        const sectorBadgesHtml = [
+          sectorCounts.Spinta > 0 ? `<span class="sector-mini-badge spinta">🤸 Spinta: ${sectorCounts.Spinta}</span>` : '',
+          sectorCounts.Tirata > 0 ? `<span class="sector-mini-badge tirata">🧗 Tirata: ${sectorCounts.Tirata}</span>` : '',
+          sectorCounts.Gambe > 0 ? `<span class="sector-mini-badge gambe">🦵 Gambe: ${sectorCounts.Gambe}</span>` : '',
+          sectorCounts.Addome > 0 ? `<span class="sector-mini-badge addome">🫃🏻 Addome: ${sectorCounts.Addome}</span>` : ''
+        ].filter(Boolean).join('');
+
+        const exercisesPillsHtml = exercises.length > 0
+          ? exercises.map(ex => `<span class="exercise-mini-pill">${escapeHtml(ex.nomeEsercizio)}</span>`).join('')
+          : `<span class="routine-choice-empty-note">Nessun esercizio (configuralo nel tab Schede)</span>`;
+
+        return `
+          <div class="routine-choice-card ${isActive ? 'is-active' : ''}" onclick="selectRoutineFromPicker('${escapeHtml(schedaName)}')">
+            <div class="routine-choice-top">
+              <div class="routine-choice-name">
+                ${isActive ? '⚡ ' : ''}${escapeHtml(schedaName)}
+              </div>
+              <span class="routine-choice-count">${exercises.length} ${exercises.length === 1 ? 'es.' : 'es.'}</span>
+            </div>
+
+            ${sectorBadgesHtml ? `<div class="routine-sector-badges-row">${sectorBadgesHtml}</div>` : ''}
+
+            <div class="routine-choice-exercises-list">
+              ${exercisesPillsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const addBtnHtml = `
+        <div class="routine-choice-add-card" onclick="handleAddNewRoutineFromPicker()" title="Crea una nuova scheda di allenamento">
+          <span style="font-size: 1.15rem;">➕</span>
+          <span>Nuova Scheda</span>
+        </div>
+      `;
+
+      listContainer.innerHTML = cardsHtml + addBtnHtml;
+    }
+
+    function handleAddNewRoutineFromPicker() {
+      closeRoutinePickerModal();
+      openNewRoutineModal(true);
+    }
+
+    function toRomanNumeral(num) {
+      const lookup = { M:1000, CM:900, D:500, CD:400, C:100, XC:90, L:50, XL:40, X:10, IX:9, V:5, IV:4, I:1 };
+      let roman = '';
+      for (let i in lookup) {
+        while (num >= lookup[i]) {
+          roman += i;
+          num -= lookup[i];
+        }
+      }
+      return roman;
+    }
+
+    // MODALE NUOVA SCHEDA
+    function openNewRoutineModal(redirectToEditor = true) {
+      window.__newRoutineRedirectToEditor = redirectToEditor;
+      const input = document.getElementById('newRoutineNameInput');
+      const routineKeys = Object.keys((appData && appData.routines) || {});
+      const nextNum = routineKeys.length + 1;
+      const defaultName = `Allenamento ${toRomanNumeral(nextNum) || nextNum}`;
+      if (input) {
+        input.value = defaultName;
+      }
+      const modal = document.getElementById('newRoutineModal');
+      if (modal) {
+        modal.classList.add('active');
+        setTimeout(() => { if (input) { input.focus(); input.select(); } }, 120);
+      }
+    }
+
+    function closeNewRoutineModal() {
+      const modal = document.getElementById('newRoutineModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function submitCreateNewRoutine() {
+      const input = document.getElementById('newRoutineNameInput');
+      const name = input ? input.value : '';
+      if (!name || !name.trim()) {
+        showToast('Inserisci un nome valido per la scheda', 'warning');
+        return;
+      }
+      const trimmed = name.trim();
+      if (appData.routines && appData.routines[trimmed]) {
+        showToast('Una scheda con questo nome esiste già!', 'warning');
+        return;
+      }
+
+      closeNewRoutineModal();
+
+      if (!appData.routines) appData.routines = {};
+      appData.routines[trimmed] = [];
+      activeRoutine = trimmed;
+      updateActiveRoutineDisplay();
+
+      if (window.__newRoutineRedirectToEditor) {
+        switchTab('tabSchede');
+        renderRoutineEditor();
+      } else {
+        if (activeTab === 'tabAllenamento') {
+          renderLiveWorkout();
+        } else if (activeTab === 'tabSchede') {
+          renderRoutineEditor();
+        }
+      }
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            showToast(`Scheda "${trimmed}" creata! Configura gli esercizi.`, 'success');
+          })
+          .withFailureHandler((err) => {
+            showToast('Errore creazione scheda: ' + (err.message || err), 'error');
+          })
+          .createNewRoutine(trimmed);
+      } else {
+        showToast(`Scheda "${trimmed}" creata (modalità mock)!`, 'success');
+      }
+    }
+
+    // MODALE RINOMINA SCHEDA
+    function openRenameRoutineModal() {
+      if (!activeRoutine) {
+        showToast('Nessuna scheda selezionata da rinominare.', 'warning');
+        return;
+      }
+      const input = document.getElementById('renameRoutineNameInput');
+      if (input) {
+        input.value = activeRoutine;
+      }
+      const modal = document.getElementById('renameRoutineModal');
+      if (modal) {
+        modal.classList.add('active');
+        setTimeout(() => { if (input) { input.focus(); input.select(); } }, 120);
+      }
+    }
+
+    function closeRenameRoutineModal() {
+      const modal = document.getElementById('renameRoutineModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function submitRenameRoutine() {
+      if (!activeRoutine) return;
+      const input = document.getElementById('renameRoutineNameInput');
+      const newName = input ? input.value : '';
+      if (!newName || !newName.trim()) {
+        showToast('Inserisci un nome valido', 'warning');
+        return;
+      }
+      const trimmed = newName.trim();
+      if (trimmed === activeRoutine) {
+        closeRenameRoutineModal();
+        return;
+      }
+      if (appData.routines && appData.routines[trimmed]) {
+        showToast('Una scheda con questo nome esiste già!', 'warning');
+        return;
+      }
+
+      const oldName = activeRoutine;
+      closeRenameRoutineModal();
+
+      appData.routines[trimmed] = appData.routines[oldName] || [];
+      delete appData.routines[oldName];
+
+      if (appData.previousHistoryByRoutine && appData.previousHistoryByRoutine[oldName]) {
+        appData.previousHistoryByRoutine[trimmed] = appData.previousHistoryByRoutine[oldName];
+        delete appData.previousHistoryByRoutine[oldName];
+      }
+
+      activeRoutine = trimmed;
+      updateActiveRoutineDisplay();
+      renderRoutineEditor();
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            showToast(`Scheda rinominata in "${trimmed}"!`, 'success');
+          })
+          .withFailureHandler((err) => {
+            showToast('Errore rinomina scheda: ' + (err.message || err), 'error');
+          })
+          .renameRoutine(oldName, trimmed);
+      } else {
+        showToast(`Scheda rinominata in "${trimmed}" (mock)!`, 'success');
+      }
+    }
+
+    // MODALE ELIMINA SCHEDA
+    function openDeleteRoutineModal() {
+      if (!activeRoutine) {
+        showToast('Nessuna scheda selezionata da eliminare.', 'warning');
+        return;
+      }
+      const nameEl = document.getElementById('deleteRoutineConfirmName');
+      if (nameEl) {
+        nameEl.textContent = activeRoutine;
+      }
+      const modal = document.getElementById('deleteRoutineModal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeDeleteRoutineModal() {
+      const modal = document.getElementById('deleteRoutineModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function submitDeleteRoutine() {
+      if (!activeRoutine) return;
+      const nameToDelete = activeRoutine;
+      closeDeleteRoutineModal();
+
+      delete appData.routines[nameToDelete];
+      if (appData.previousHistoryByRoutine) {
+        delete appData.previousHistoryByRoutine[nameToDelete];
+      }
+
+      const remaining = Object.keys(appData.routines || {});
+      activeRoutine = remaining.length > 0 ? remaining[0] : '';
+      updateActiveRoutineDisplay();
+      renderRoutineEditor();
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            showToast(`Scheda "${nameToDelete}" eliminata con successo.`, 'info');
+          })
+          .withFailureHandler((err) => {
+            showToast('Errore eliminazione scheda: ' + (err.message || err), 'error');
+          })
+          .deleteRoutine(nameToDelete);
+      } else {
+        showToast(`Scheda "${nameToDelete}" eliminata (mock).`, 'info');
+      }
+    }
+
+    // ==========================================
+    // TAB 2: SCHEDE (ROUTINE EDITOR)
+    // ==========================================
+    function renderRoutineEditor() {
+      const container = document.getElementById('routineEditorList');
+      const routine = (appData.routines && appData.routines[activeRoutine]) || [];
+      const titleEl = document.getElementById('schedaEditorTitle');
+      if (titleEl) titleEl.textContent = `Programmazione: ${activeRoutine || 'Nessuna scheda'}`;
+      const currentNameEl = document.getElementById('schedaEditorCurrentName');
+      if (currentNameEl) currentNameEl.textContent = activeRoutine || 'Nessuna scheda';
+
+      if (!activeRoutine || !appData.routines || !appData.routines[activeRoutine]) {
+        container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">Nessuna scheda selezionata. Creane una con "+ Nuova Scheda".</p>`;
+        return;
+      }
+
+      if (routine.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">Nessun esercizio presente in questa scheda. Tocca "+ Aggiungi Esercizio alla Scheda".</p>`;
+        return;
+      }
+
+      container.innerHTML = routine.map((item, idx) => {
+        const catInfo = (appData.catalog && appData.catalog.find(c => c && c.nome && c.nome.toLowerCase() === item.nomeEsercizio.toLowerCase())) || {
+          unitaMisura: 'REPS',
+          usaLeve: false
+        };
+        const repsSecLabel = (catInfo.unitaMisura === 'SEC') ? 'Secondi Target' : 'Reps Target';
+
+        return `
+        <div class="routine-item" data-editor-idx="${idx}">
+          <div class="routine-item-header">
+            <span class="routine-item-title">${idx + 1}. ${item.nomeEsercizio}</span>
+            <div class="reorder-btns">
+              <button class="btn-reorder" onclick="moveRoutineItem(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
+              <button class="btn-reorder" onclick="moveRoutineItem(${idx}, 1)" ${idx === routine.length - 1 ? 'disabled' : ''}>▼</button>
+              <button class="btn-reorder" onclick="removeRoutineItem(${idx})" style="color: var(--accent-danger);">✕</button>
+            </div>
+          </div>
+
+          <div class="routine-item-grid">
+            <div class="input-group">
+              <label class="input-label">Serie</label>
+              <input type="number" class="input-dark item-serie" value="${item.serieTarget}">
+            </div>
+            <div class="input-group">
+              <label class="input-label">${repsSecLabel}</label>
+              <input type="number" class="input-dark item-reps" value="${item.repsSecTarget}">
+            </div>
+            <div class="input-group">
+              <label class="input-label">Zavorra (kg)</label>
+              <input type="number" step="0.5" class="input-dark item-zav" value="${item.zavorraTargetKg}">
+            </div>
+          </div>
+
+          <div class="routine-item-grid" style="${catInfo.usaLeve ? 'grid-template-columns: 1fr 1fr;' : 'grid-template-columns: 1fr;'}">
+            ${catInfo.usaLeve ? `
+              <div class="input-group">
+                <label class="input-label">Leva Target</label>
+                <select class="select-dark item-leva">
+                  ${getLeveOptionsHtml(item.levaTarget, true)}
+                </select>
+              </div>
+            ` : `<input type="hidden" class="item-leva" value="N/A">`}
+            <div class="input-group">
+              <label class="input-label">Recupero (sec)</label>
+              <input type="number" step="10" class="input-dark item-rec" value="${item.recuperoSec}">
+            </div>
+          </div>
+
+          <div class="input-group" style="margin-top: 6px;">
+            <label class="input-label">Note Tecniche Fisse</label>
+            <input type="text" class="input-dark item-note" value="${escapeHtml(item.noteScheda || '')}">
+          </div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    function moveRoutineItem(idx, direction) {
+      const routine = appData.routines[activeRoutine];
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= routine.length) return;
+      const temp = routine[idx];
+      routine[idx] = routine[targetIdx];
+      routine[targetIdx] = temp;
+      renderRoutineEditor();
+    }
+
+    function removeRoutineItem(idx) {
+      appData.routines[activeRoutine].splice(idx, 1);
+      renderRoutineEditor();
+    }
+
+    // Gestione Modale Aggiunta Esercizio alla Scheda con Ricerca Autocomplete
+    function selectExerciseForRoutineModal(exerciseName) {
+      const searchInput = document.getElementById('modalAddExerciseSearch');
+      const hiddenVal = document.getElementById('modalAddExerciseSelectedVal');
+      const dropdown = document.getElementById('modalAddExerciseSuggestions');
+
+      if (searchInput) searchInput.value = exerciseName;
+      if (hiddenVal) hiddenVal.value = exerciseName;
+      if (dropdown) dropdown.style.display = 'none';
+
+      updateAddExerciseModalLevaAndUnit(exerciseName);
+    }
+
+    function renderAutocompleteSuggestions(filterText = '') {
+      const dropdown = document.getElementById('modalAddExerciseSuggestions');
+      if (!dropdown) return;
+
+      const q = filterText.toLowerCase().trim();
+      const matches = (appData.catalog || []).filter(c => {
+        if (!q) return true;
+        const n = (c.nome || '').toLowerCase();
+        const s = (c.settore || '').toLowerCase();
+        return n.includes(q) || s.includes(q);
+      });
+
+      if (matches.length === 0) {
+        dropdown.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 0.85rem; text-align: center;">Nessun esercizio trovato</div>`;
+        dropdown.style.display = 'block';
+        return;
+      }
+
+      dropdown.innerHTML = matches.map(c => `
+        <div class="autocomplete-item" data-ex-name="${escapeHtml(c.nome)}">
+          <span class="autocomplete-item-name">${escapeHtml(c.nome)}</span>
+          <span class="autocomplete-item-meta">${escapeHtml(c.settore || 'Generale')} • ${c.unitaMisura || 'REPS'}</span>
+        </div>
+      `).join('');
+
+      dropdown.querySelectorAll('.autocomplete-item').forEach(el => {
+        el.addEventListener('click', () => {
+          selectExerciseForRoutineModal(el.getAttribute('data-ex-name'));
+        });
+      });
+
+      dropdown.style.display = 'block';
+    }
+
+    function updateAddExerciseModalLevaAndUnit(selectedName) {
+      const catItem = (appData.catalog || []).find(c => c && c.nome && c.nome.toLowerCase() === (selectedName || '').toLowerCase());
+      const repsLabel = document.getElementById('modalAddRepsLabel');
+      const levaGroup = document.getElementById('modalAddLevaGroup');
+      const levaSelect = document.getElementById('modalAddLeva');
+      const levaRow = document.getElementById('modalAddLevaRow');
+
+      if (catItem) {
+        if (repsLabel) repsLabel.textContent = (catItem.unitaMisura === 'SEC') ? 'Secondi Target' : 'Reps Target';
+        if (catItem.usaLeve) {
+          if (levaGroup) levaGroup.style.display = 'flex';
+          if (levaRow) levaRow.style.gridTemplateColumns = '1fr 1fr';
+          if (levaSelect) {
+            levaSelect.innerHTML = getLeveOptionsHtml('Straddle', true);
+            levaSelect.disabled = false;
+          }
+        } else {
+          if (levaGroup) levaGroup.style.display = 'none';
+          if (levaRow) levaRow.style.gridTemplateColumns = '1fr';
+          if (levaSelect) {
+            levaSelect.innerHTML = '<option value="N/A">N/A</option>';
+            levaSelect.disabled = true;
+          }
+        }
+      } else {
+        if (repsLabel) repsLabel.textContent = 'Reps / Sec Target';
+        if (levaGroup) levaGroup.style.display = 'none';
+        if (levaRow) levaRow.style.gridTemplateColumns = '1fr';
+        if (levaSelect) {
+          levaSelect.innerHTML = '<option value="N/A">N/A</option>';
+          levaSelect.disabled = true;
+        }
+      }
+    }
+
+    const modalSearchInput = document.getElementById('modalAddExerciseSearch');
+    if (modalSearchInput) {
+      modalSearchInput.addEventListener('input', (e) => {
+        renderAutocompleteSuggestions(e.target.value);
+      });
+      modalSearchInput.addEventListener('focus', (e) => {
+        renderAutocompleteSuggestions(e.target.value);
+      });
+    }
+
+    // Chiudi suggerimenti quando si tocca fuori
+    document.addEventListener('click', (e) => {
+      const container = document.querySelector('.autocomplete-container');
+      const dropdown = document.getElementById('modalAddExerciseSuggestions');
+      if (dropdown && container && !container.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    document.getElementById('btnAddExerciseToRoutine').addEventListener('click', () => {
+      if (!appData.catalog || appData.catalog.length === 0) {
+        showToast('Il catalogo è vuoto. Crea prima un esercizio con "+ Nuovo in Catalogo"!', 'error');
+        return;
+      }
+
+      document.getElementById('addExerciseModalTitle').textContent = `Aggiungi a ${activeRoutine}`;
+
+      document.getElementById('modalAddSerie').value = 4;
+      document.getElementById('modalAddReps').value = 8;
+      document.getElementById('modalAddZav').value = 0;
+      document.getElementById('modalAddRec').value = 120;
+      document.getElementById('modalAddNote').value = '';
+
+      // Campo ricerca completamente vuoto (nessun esercizio preimpostato)
+      const searchInput = document.getElementById('modalAddExerciseSearch');
+      const hiddenVal = document.getElementById('modalAddExerciseSelectedVal');
+      const dropdown = document.getElementById('modalAddExerciseSuggestions');
+      if (searchInput) searchInput.value = '';
+      if (hiddenVal) hiddenVal.value = '';
+      if (dropdown) dropdown.style.display = 'none';
+
+      updateAddExerciseModalLevaAndUnit('');
+
+      document.getElementById('addExerciseModal').classList.add('active');
+      setTimeout(() => { if (searchInput) searchInput.focus(); }, 120);
+    });
+
+    document.getElementById('btnCancelAddExerciseModal').addEventListener('click', () => {
+      document.getElementById('addExerciseModal').classList.remove('active');
+    });
+
+    document.getElementById('btnConfirmAddExercise').addEventListener('click', () => {
+      const hiddenVal = document.getElementById('modalAddExerciseSelectedVal');
+      const searchVal = document.getElementById('modalAddExerciseSearch');
+      const esName = (hiddenVal && hiddenVal.value) ? hiddenVal.value.trim() : (searchVal ? searchVal.value.trim() : '');
+
+      if (!esName) {
+        showToast('Seleziona un esercizio valido dal catalogo', 'error');
+        return;
+      }
+
+      const catItem = (appData.catalog || []).find(c => c && c.nome && c.nome.toLowerCase() === esName.toLowerCase());
+      if (!catItem) {
+        showToast(`"${esName}" non esiste in catalogo. Aggiungilo prima con "+ Nuovo in Catalogo"!`, 'error');
+        return;
+      }
+
+      const serieVal = parseInt(document.getElementById('modalAddSerie').value, 10);
+      const repsVal = parseInt(document.getElementById('modalAddReps').value, 10);
+      const zavVal = parseFloat(document.getElementById('modalAddZav').value);
+      const levaVal = (catItem.usaLeve && document.getElementById('modalAddLeva')) ? (document.getElementById('modalAddLeva').value || 'Straddle') : 'N/A';
+      const recVal = parseInt(document.getElementById('modalAddRec').value, 10);
+      const noteVal = document.getElementById('modalAddNote').value.trim();
+
+      if (!appData.routines[activeRoutine]) {
+        appData.routines[activeRoutine] = [];
+      }
+
+      appData.routines[activeRoutine].push({
+        idRiga: '',
+        scheda: activeRoutine,
+        ordine: appData.routines[activeRoutine].length + 1,
+        nomeEsercizio: catItem.nome,
+        levaTarget: levaVal,
+        serieTarget: isNaN(serieVal) || serieVal < 1 ? 4 : serieVal,
+        repsSecTarget: isNaN(repsVal) || repsVal < 1 ? 8 : repsVal,
+        zavorraTargetKg: isNaN(zavVal) ? 0 : zavVal,
+        recuperoSec: isNaN(recVal) || recVal < 10 ? 120 : recVal,
+        noteScheda: noteVal
+      });
+
+      document.getElementById('addExerciseModal').classList.remove('active');
+      renderRoutineEditor();
+      showToast(`Esercizio aggiunto a ${activeRoutine}! Ricorda di salvare.`, 'success');
+    });
+
+    document.getElementById('btnSaveRoutineEdits').addEventListener('click', () => {
+      const items = document.querySelectorAll('#routineEditorList .routine-item');
+      const updatedExercises = [];
+
+      items.forEach((item, idx) => {
+        const orig = appData.routines[activeRoutine][idx];
+        updatedExercises.push({
+          nomeEsercizio: orig.nomeEsercizio,
+          serieTarget: parseInt(item.querySelector('.item-serie').value, 10) || 3,
+          repsSecTarget: parseInt(item.querySelector('.item-reps').value, 10) || 8,
+          zavorraTargetKg: parseFloat(item.querySelector('.item-zav').value) || 0,
+          levaTarget: item.querySelector('.item-leva').value,
+          recuperoSec: parseInt(item.querySelector('.item-rec').value, 10) || 120,
+          noteScheda: item.querySelector('.item-note').value.trim()
+        });
+      });
+
+      const btn = document.getElementById('btnSaveRoutineEdits');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> <span>Aggiornamento in corso...</span>';
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.disabled = false;
+            btn.innerHTML = '<span>💾 Salva Modifiche Scheda</span>';
+            showToast('Scheda aggiornata con successo!', 'success');
+            appData.routines[activeRoutine] = updatedExercises;
+            syncActiveWorkoutAfterRoutineEdit(activeRoutine, updatedExercises);
+            renderLiveWorkout();
+          })
+          .withFailureHandler(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<span>💾 Salva Modifiche Scheda</span>';
+            showToast('Errore aggiornamento: ' + err.message, 'error');
+          })
+          .updateRoutine(activeRoutine, updatedExercises);
+      } else {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<span>💾 Salva Modifiche Scheda</span>';
+          showToast('Scheda salvata (mock locale)', 'success');
+          appData.routines[activeRoutine] = updatedExercises;
+          syncActiveWorkoutAfterRoutineEdit(activeRoutine, updatedExercises);
+          renderLiveWorkout();
+        }, 500);
+      }
+    });
+
+    // Modale Nuovo Catalogo
+    document.getElementById('btnOpenNewCatalogModal').addEventListener('click', () => {
+      document.getElementById('newCatName').value = '';
+      document.getElementById('catalogModal').classList.add('active');
+    });
+
+    document.getElementById('btnCancelCatModal').addEventListener('click', () => {
+      document.getElementById('catalogModal').classList.remove('active');
+    });
+
+    document.getElementById('btnSaveCatModal').addEventListener('click', () => {
+      const nome = document.getElementById('newCatName').value.trim();
+      const settore = document.getElementById('newCatSettore').value;
+      const unitaMisura = document.getElementById('newCatUnita').value;
+      const usaLeve = document.getElementById('newCatUsaLeve').value === 'true';
+
+      if (!nome) {
+        showToast('Inserisci un nome valido', 'error');
+        return;
+      }
+
+      const exerciseObj = { nome, settore, unitaMisura, usaLeve };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            showToast('Esercizio aggiunto al catalogo!', 'success');
+            document.getElementById('catalogModal').classList.remove('active');
+            appData.catalog.push(exerciseObj);
+            populateAnalyticsSelectors();
+          })
+          .withFailureHandler(err => {
+            showToast('Errore catalogo: ' + err.message, 'error');
+          })
+          .saveCatalogExercise(exerciseObj);
+      } else {
+        appData.catalog.push(exerciseObj);
+        populateAnalyticsSelectors();
+        document.getElementById('catalogModal').classList.remove('active');
+        showToast('Esercizio salvato nel catalogo', 'success');
+      }
+    });
+
+    // ==========================================
+    // TAB 3: GRAFICI DI PROGRESSIONE
+    // ==========================================
+    let currentAnalyticsSectorFilter = 'Tutti';
+    let analyticsControlsInitialized = false;
+
+    function initAnalyticsControls() {
+      if (analyticsControlsInitialized) return;
+      analyticsControlsInitialized = true;
+
+      // Click listener per i filtri di categoria (Tutti, Spinta, Tirata, Gambe, Addome)
+      const pillsContainer = document.getElementById('analyticsCategoryPills');
+      if (pillsContainer) {
+        pillsContainer.addEventListener('click', (e) => {
+          const pill = e.target.closest('.pill-category');
+          if (!pill) return;
+          pillsContainer.querySelectorAll('.pill-category').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          currentAnalyticsSectorFilter = pill.getAttribute('data-sector') || 'Tutti';
+          populateAnalyticsSelectors(false);
+        });
+      }
+
+      // Click listener per i bottoni compatti del frame temporale (3M, 6M, Tutto)
+      const periodGroup = document.getElementById('analyticsPeriodButtonGroup');
+      if (periodGroup) {
+        periodGroup.addEventListener('click', (e) => {
+          const btn = e.target.closest('.btn-period');
+          if (!btn) return;
+          periodGroup.querySelectorAll('.btn-period').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const pVal = btn.getAttribute('data-period') || 'all';
+          const hiddenInput = document.getElementById('analyticsPeriodFilter');
+          if (hiddenInput) {
+            hiddenInput.value = pVal;
+          }
+          filterAndRenderAnalytics();
+        });
+      }
+
+      const select = document.getElementById('analyticsExerciseSelect');
+      if (select) {
+        select.onchange = loadAnalyticsData;
+      }
+      const metricSelect = document.getElementById('analyticsMetricSelect');
+      if (metricSelect) {
+        metricSelect.onchange = () => renderProgressionChart();
+      }
+      const periodFilter = document.getElementById('analyticsPeriodFilter');
+      if (periodFilter) {
+        periodFilter.onchange = filterAndRenderAnalytics;
+      }
+    }
+
+    function populateAnalyticsSelectors(maintainExercise = false) {
+      initAnalyticsControls();
+
+      const select = document.getElementById('analyticsExerciseSelect');
+      if (!select) return;
+
+      const previousSelected = maintainExercise ? select.value : '';
+
+      // Filtra catalogo in base al settore selezionato
+      let filteredCatalog = appData.catalog || [];
+      if (currentAnalyticsSectorFilter !== 'Tutti') {
+        filteredCatalog = filteredCatalog.filter(c => {
+          const norm = normalizeSettore(c.settore, c.nome);
+          return norm === currentAnalyticsSectorFilter;
+        });
+      }
+
+      if (filteredCatalog.length === 0) {
+        select.innerHTML = '<option value="">Nessun esercizio in questa categoria</option>';
+        currentAnalyticsData = [];
+        filterAndRenderAnalytics();
+        return;
+      }
+
+      select.innerHTML = filteredCatalog.map(c => `<option value="${escapeHtml(c.nome)}">${c.nome}</option>`).join('');
+
+      if (previousSelected && filteredCatalog.some(c => c.nome === previousSelected)) {
+        select.value = previousSelected;
+      } else {
+        select.value = filteredCatalog[0].nome;
+      }
+
+      loadAnalyticsData();
+    }
+
+    let currentAnalyticsData = [];
+
+    function loadAnalyticsData() {
+      const select = document.getElementById('analyticsExerciseSelect');
+      const esName = select ? select.value : '';
+      if (!esName) {
+        currentAnalyticsData = [];
+        filterAndRenderAnalytics();
+        return;
+      }
+
+      const catItem = (appData.catalog && appData.catalog.find(c => c && c.nome && c.nome.toLowerCase() === (esName || '').toLowerCase())) || {
+        unitaMisura: 'REPS',
+        usaLeve: false
+      };
+
+      // Tonnellaggio non deve essere selezionabile per esercizi a secondaggio
+      const optTonnellaggio = document.getElementById('optMetricTonnellaggio');
+      const metricSelect = document.getElementById('analyticsMetricSelect');
+      if (optTonnellaggio) {
+        if (catItem.unitaMisura === 'SEC') {
+          optTonnellaggio.style.display = 'none';
+          optTonnellaggio.disabled = true;
+          if (metricSelect.value === 'tonnellaggio') {
+            metricSelect.value = 'carico';
+          }
+        } else {
+          optTonnellaggio.style.display = 'block';
+          optTonnellaggio.disabled = false;
+        }
+      }
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            currentAnalyticsData = res.data || [];
+            filterAndRenderAnalytics();
+          })
+          .withFailureHandler(err => {
+            showToast('Errore analitiche: ' + err.message, 'error');
+          })
+          .getExerciseAnalytics(esName, 'Tutte');
+      } else {
+        // Mock data per analytics
+        currentAnalyticsData = getMockAnalyticsData(esName);
+        filterAndRenderAnalytics();
+      }
+    }
+
+    function filterAndRenderAnalytics() {
+      const period = document.getElementById('analyticsPeriodFilter').value;
+      let filtered = [...currentAnalyticsData];
+
+      if (period !== 'all') {
+        const days = parseInt(period, 10);
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        const cutoffStr = cutoffDate.toISOString().substring(0, 10);
+        filtered = filtered.filter(item => item.data >= cutoffStr);
+      }
+
+      renderAnalyticsTable(filtered);
+      renderProgressionChart(filtered);
+    }
+
+    function renderAnalyticsTable(data) {
+      const tbody = document.getElementById('analyticsTableBody');
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Nessun dato registrato</td></tr>`;
+        return;
+      }
+
+      const esName = document.getElementById('analyticsExerciseSelect').value;
+      const catItem = (appData.catalog && appData.catalog.find(c => c && c.nome && c.nome.toLowerCase() === (esName || '').toLowerCase())) || {
+        unitaMisura: 'REPS',
+        usaLeve: false
+      };
+      const unitLabel = (catItem.unitaMisura === 'SEC') ? 'sec' : 'reps';
+
+      tbody.innerHTML = data.map(d => {
+        const levaDisplay = catItem.usaLeve ? (d.levaUsata && d.levaUsata !== 'N/A' ? d.levaUsata : '—') : '—';
+        const volDisplay = `${d.totaleRepsSec} ${unitLabel}`;
+        return `
+          <tr>
+            <td>${d.data}</td>
+            <td>${levaDisplay}</td>
+            <td>${d.zavorraKg > 0 ? '+' + d.zavorraKg : d.zavorraKg}</td>
+            <td style="font-weight: 700;">${d.caricoTotaleKg} kg</td>
+            <td>${d.dettaglioSerie}</td>
+            <td style="color: var(--accent-green); font-weight: 700;">${volDisplay}</td>
+            <td>${d.rpe || '—'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Helper per sfumatura RPE sul canvas
+    function getRpeGradient(canvasCtx, area) {
+      if (!area) return '#f59e0b';
+      const grad = canvasCtx.createLinearGradient(0, area.bottom, 0, area.top);
+      grad.addColorStop(0, '#10b981');    // Verde (7.0 - 8.0)
+      grad.addColorStop(0.35, '#10b981');
+      grad.addColorStop(0.65, '#f59e0b'); // Arancione (8.5 - 9.0)
+      grad.addColorStop(0.85, '#ef4444'); // Rosso (9.5 - 10.0)
+      grad.addColorStop(1, '#dc2626');
+      return grad;
+    }
+
+    function renderProgressionChart(dataOverride) {
+      const data = Array.isArray(dataOverride) ? dataOverride : currentAnalyticsData;
+      const ctx = document.getElementById('progressionChart').getContext('2d');
+      const metric = document.getElementById('analyticsMetricSelect').value;
+      const esName = document.getElementById('analyticsExerciseSelect').value;
+      const catItem = (appData.catalog && appData.catalog.find(c => c && c.nome && c.nome.toLowerCase() === (esName || '').toLowerCase())) || {
+        unitaMisura: 'REPS',
+        usaLeve: false
+      };
+
+      const labels = data.map(d => d.data.substring(5)); // MM-DD
+
+      let datasets = [];
+      let scalesConfig = {};
+
+      if (metric === 'carico') {
+        datasets = [
+          {
+            label: 'BW + Zav',
+            data: data.map(d => d.caricoTotaleKg),
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.2,
+            fill: true
+          },
+          {
+            label: 'Zavorra',
+            data: data.map(d => d.zavorraKg),
+            borderColor: '#10b981',
+            tension: 0.2
+          }
+        ];
+        scalesConfig = {
+          x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+          y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+        };
+      } else if (metric === 'tonnellaggio') {
+        datasets = [
+          {
+            label: 'Totale',
+            data: data.map(d => d.volumeTotaleKg),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.2,
+            fill: true
+          },
+          {
+            label: 'Zavorra',
+            data: data.map(d => d.volumeZavorraKg),
+            borderColor: '#f59e0b',
+            tension: 0.2
+          }
+        ];
+        scalesConfig = {
+          x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+          y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+        };
+      } else if (metric === 'volume') {
+        datasets = [
+          {
+            label: 'Totale Reps/Sec',
+            data: data.map(d => d.totaleRepsSec),
+            borderColor: '#3b82f6',
+            tension: 0.2
+          },
+          {
+            label: 'Max Singola Serie',
+            data: data.map(d => d.maxRepsSec),
+            borderColor: '#f59e0b',
+            borderDash: [5, 5],
+            tension: 0.2
+          }
+        ];
+        scalesConfig = {
+          x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+          y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+        };
+      } else if (metric === 'difficolta') {
+        if (catItem.usaLeve) {
+          datasets = [
+            {
+              label: 'Livello Leva (0-7)',
+              data: data.map(d => d.livelloLeva),
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              yAxisID: 'yLeva',
+              tension: 0.35,
+              stepped: false,
+              fill: false,
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointBackgroundColor: '#3b82f6',
+              pointBorderColor: '#ffffff'
+            },
+            {
+              label: 'RPE (7-10)',
+              data: data.map(d => d.rpe),
+              borderColor: function(context) {
+                const chart = context.chart;
+                const { ctx: cCtx, chartArea } = chart;
+                return getRpeGradient(cCtx, chartArea);
+              },
+              borderWidth: 3,
+              yAxisID: 'yRpe',
+              tension: 0.25,
+              pointRadius: 5,
+              pointBackgroundColor: function(context) {
+                const val = context.raw;
+                if (val >= 9.5) return '#ef4444';
+                if (val >= 8.5) return '#f59e0b';
+                return '#10b981';
+              },
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 1.5
+            }
+          ];
+
+          scalesConfig = {
+            x: {
+              ticks: { color: '#9ca3af', font: { size: 10 } },
+              grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            },
+            yLeva: {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              max: 7,
+              ticks: {
+                stepSize: 1,
+                precision: 0,
+                color: '#93c5fd',
+                font: { size: 11, weight: '700' }
+              },
+              title: {
+                display: true,
+                text: 'Leva (0-7)',
+                color: '#93c5fd',
+                font: { size: 10, weight: '700' }
+              },
+              grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            },
+            yRpe: {
+              type: 'linear',
+              position: 'right',
+              min: 7,
+              max: 10,
+              ticks: {
+                stepSize: 0.5,
+                color: '#fbbf24',
+                font: { size: 11, weight: '700' }
+              },
+              title: {
+                display: true,
+                text: 'RPE (7-10)',
+                color: '#fbbf24',
+                font: { size: 10, weight: '700' }
+              },
+              grid: { drawOnChartArea: false }
+            }
+          };
+        } else {
+          // Esercizio senza leve: SOLO curva RPE, nessuna leva né in grafico né in legenda!
+          datasets = [
+            {
+              label: 'RPE (7-10)',
+              data: data.map(d => d.rpe),
+              borderColor: function(context) {
+                const chart = context.chart;
+                const { ctx: cCtx, chartArea } = chart;
+                return getRpeGradient(cCtx, chartArea);
+              },
+              borderWidth: 3,
+              tension: 0.25,
+              pointRadius: 5,
+              pointBackgroundColor: function(context) {
+                const val = context.raw;
+                if (val >= 9.5) return '#ef4444';
+                if (val >= 8.5) return '#f59e0b';
+                return '#10b981';
+              },
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 1.5
+            }
+          ];
+
+          scalesConfig = {
+            x: {
+              ticks: { color: '#9ca3af', font: { size: 10 } },
+              grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            },
+            y: {
+              type: 'linear',
+              min: 7,
+              max: 10,
+              ticks: {
+                stepSize: 0.5,
+                color: '#fbbf24',
+                font: { size: 11, weight: '700' }
+              },
+              title: {
+                display: true,
+                text: 'RPE (7-10)',
+                color: '#fbbf24',
+                font: { size: 10, weight: '700' }
+              },
+              grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            }
+          };
+        }
+      }
+
+      if (progressionChartInstance) {
+        progressionChartInstance.destroy();
+      }
+
+      progressionChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                usePointStyle: true,
+                pointStyle: 'rectRounded',
+                boxWidth: 9,
+                boxHeight: 9,
+                borderRadius: 3,
+                color: '#9ca3af',
+                font: { size: 11, weight: '600' },
+                padding: 12
+              }
+            }
+          },
+          scales: scalesConfig
+        }
+      });
+    }
+
+    // ==========================================
+    // TAB 4: PESO CORPOREO
+    // ==========================================
+    function renderWeightTab() {
+      const recent = appData.currentBodyWeight.recentWeights || [];
+      const tbody = document.getElementById('weightTableBody');
+
+      tbody.innerHTML = [...recent].reverse().map(r => `
+        <tr>
+          <td>${r.data}</td>
+          <td style="font-weight: 700; color: var(--accent-green);">${r.peso.toFixed(1)} kg</td>
+          <td style="color: var(--text-muted);">${r.note || '-'}</td>
+        </tr>
+      `).join('');
+
+      // Mini chart
+      const ctx = document.getElementById('weightMiniChart').getContext('2d');
+      if (weightMiniChartInstance) weightMiniChartInstance.destroy();
+
+      weightMiniChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: recent.map(r => r.data.substring(5)),
+          datasets: [{
+            label: 'Peso (kg)',
+            data: recent.map(r => r.peso),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+          }
+        }
+      });
+    }
+
+    document.getElementById('btnLogWeight').addEventListener('click', () => {
+      const val = parseFloat(document.getElementById('inputNewWeight').value);
+      const note = document.getElementById('inputWeightNote').value.trim();
+
+      if (isNaN(val) || val <= 30 || val >= 250) {
+        showToast('Inserisci un peso valido in kg', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btnLogWeight');
+      btn.disabled = true;
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.disabled = false;
+            document.getElementById('inputNewWeight').value = '';
+            document.getElementById('inputWeightNote').value = '';
+            showToast('Peso registrato con successo!', 'success');
+            appData.currentBodyWeight = res.currentBodyWeight;
+            document.getElementById('headerBwBadge').textContent = `BW: ${res.currentBodyWeight.peso.toFixed(1)} kg`;
+            document.getElementById('currentWeightDisplay').innerHTML = `${res.currentBodyWeight.peso.toFixed(1)} <span style="font-size: 1.2rem; font-weight: 600; color: var(--text-muted);">kg</span>`;
+            renderWeightTab();
+          })
+          .withFailureHandler(err => {
+            btn.disabled = false;
+            showToast('Errore peso: ' + err.message, 'error');
+          })
+          .logBodyWeight(val, note);
+      } else {
+        btn.disabled = false;
+        appData.currentBodyWeight.peso = val;
+        appData.currentBodyWeight.recentWeights.push({ data: '2026-10-30', peso: val, note });
+        renderWeightTab();
+        showToast('Peso salvato (mock locale)', 'success');
+      }
+    });
+
+    // ==========================================
+    // NAVIGATION & EVENT LISTENERS
+    // ==========================================
+    function syncRoutinePills() {
+      updateActiveRoutineDisplay();
+    }
+
+    function switchTab(targetTabId) {
+      activeTab = targetTabId;
+      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(ni => ni.classList.remove('active'));
+
+      const targetEl = document.getElementById(targetTabId);
+      if (targetEl) targetEl.classList.add('active');
+      const navEl = document.querySelector(`[data-tab="${targetTabId}"]`);
+      if (navEl) navEl.classList.add('active');
+
+      const selectorBar = document.getElementById('routineSelectorBar');
+      if (targetTabId === 'tabAllenamento' || targetTabId === 'tabSchede') {
+        selectorBar.style.display = 'flex';
+        updateActiveRoutineDisplay();
+        if (targetTabId === 'tabAllenamento') {
+          renderLiveWorkout();
+        } else if (targetTabId === 'tabSchede') {
+          renderRoutineEditor();
+        }
+      } else {
+        selectorBar.style.display = 'none';
+      }
+
+      updateTimerReturnButton();
+
+      if (targetTabId === 'tabGrafici' && progressionChartInstance) {
+        progressionChartInstance.resize();
+      }
+      if (targetTabId === 'tabPeso' && weightMiniChartInstance) {
+        weightMiniChartInstance.resize();
+      }
+    }
+
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchTab(btn.getAttribute('data-tab'));
+      });
+    });
+
+    const newRoutineInput = document.getElementById('newRoutineNameInput');
+    if (newRoutineInput) {
+      newRoutineInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitCreateNewRoutine();
+      });
+    }
+
+    const renameRoutineInput = document.getElementById('renameRoutineNameInput');
+    if (renameRoutineInput) {
+      renameRoutineInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitRenameRoutine();
+      });
+    }
+
+    document.getElementById('btnSoundToggle').addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem(STORAGE_KEY_SOUND, soundEnabled ? 'true' : 'false');
+      updateSoundButtonUI();
+      showToast(soundEnabled ? 'Audio abilitato 🔔' : 'Audio silenziato 🔕');
+    });
+
+    function updateSoundButtonUI() {
+      const btn = document.getElementById('btnSoundToggle');
+      btn.textContent = soundEnabled ? '🔔' : '🔕';
+      btn.style.opacity = soundEnabled ? '1' : '0.6';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ==========================================
+    // MOCK DATA GENERATOR (STANDALONE TESTING)
+    // ==========================================
+    function getMockBootstrapData() {
+      return {
+        success: true,
+        todayIso: '2026-10-30',
+        currentBodyWeight: {
+          peso: 68.0,
+          data: '2026-10-30',
+          recentWeights: [
+            { data: '2026-10-01', peso: 67.4, note: 'Inizio' },
+            { data: '2026-10-15', peso: 67.8, note: 'Check' },
+            { data: '2026-10-30', peso: 68.0, note: 'Oggi' }
+          ]
+        },
+        catalog: [
+          { nome: 'Planche', settore: 'Spinta', unitaMisura: 'SEC', usaLeve: true },
+          { nome: 'Planche Push Up', settore: 'Spinta', unitaMisura: 'REPS', usaLeve: true },
+          { nome: 'Dip alle parallele', settore: 'Spinta', unitaMisura: 'REPS', usaLeve: false },
+          { nome: 'HSPU', settore: 'Spinta', unitaMisura: 'REPS', usaLeve: false },
+          { nome: 'Front Lever', settore: 'Tirata', unitaMisura: 'SEC', usaLeve: true },
+          { nome: 'Trazioni alla sbarra', settore: 'Tirata', unitaMisura: 'REPS', usaLeve: false },
+          { nome: 'Pistol Squat', settore: 'Gambe', unitaMisura: 'REPS', usaLeve: false },
+          { nome: 'Dragon Flag', settore: 'Addome', unitaMisura: 'REPS', usaLeve: true }
+        ],
+        routines: {
+          'Allenamento I': [
+            { nomeEsercizio: 'Planche', levaTarget: 'Straddle', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 0, recuperoSec: 180, noteScheda: 'Focus PPT' },
+            { nomeEsercizio: 'Planche Push Up', levaTarget: 'Tuck', serieTarget: 4, repsSecTarget: 5, zavorraTargetKg: 0, recuperoSec: 150, noteScheda: 'Spinta piena' },
+            { nomeEsercizio: 'Dip alle parallele', levaTarget: 'N/A', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 15, recuperoSec: 120, noteScheda: 'Discesa 3s' },
+            { nomeEsercizio: 'HSPU', levaTarget: 'N/A', serieTarget: 3, repsSecTarget: 6, zavorraTargetKg: 0, recuperoSec: 150, noteScheda: 'Pancia alla parete' }
+          ],
+          'Allenamento II': [
+            { nomeEsercizio: 'Front Lever', levaTarget: 'Straddle', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 0, recuperoSec: 180, noteScheda: 'Depressione' },
+            { nomeEsercizio: 'Trazioni alla sbarra', levaTarget: 'N/A', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 15, recuperoSec: 120, noteScheda: 'Mento sopra' }
+          ],
+          'Allenamento III': [],
+          'Allenamento IV': []
+        },
+        previousHistoryByRoutine: {
+          'Allenamento I': {
+            'Dip alle parallele': { data: '2026-10-28', scheda: 'Allenamento I', levaUsata: 'N/A', zavorraKg: 15, dettaglioSerie: '8 | 8 | 8 | 8', rpe: 8 },
+            'Planche': { data: '2026-10-28', scheda: 'Allenamento I', levaUsata: 'Straddle', zavorraKg: 0, dettaglioSerie: '8 | 8 | 7 | 6', rpe: 8.5 }
+          }
+        }
+      };
+    }
+
+    function getMockAnalyticsData(esName) {
+      const cat = (appData.catalog && appData.catalog.find(c => c && c.nome && c.nome.toLowerCase() === (esName || '').toLowerCase())) || {};
+      const isSec = (cat.unitaMisura === 'SEC');
+      const usaLeve = cat.usaLeve === true;
+      return [
+        { data: '2026-10-10', levaUsata: usaLeve ? 'Tuck' : 'N/A', livelloLeva: usaLeve ? 1 : 0, caricoTotaleKg: 77.4, zavorraKg: 10, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2476.8, volumeZavorraKg: isSec ? 0 : 320, rpe: 7.5, dettaglioSerie: '8 | 8 | 8 | 8' },
+        { data: '2026-10-18', levaUsata: usaLeve ? 'Adv Tuck' : 'N/A', livelloLeva: usaLeve ? 2 : 0, caricoTotaleKg: 79.8, zavorraKg: 12, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2553.6, volumeZavorraKg: isSec ? 0 : 384, rpe: 8.0, dettaglioSerie: '8 | 8 | 8 | 8' },
+        { data: '2026-10-28', levaUsata: usaLeve ? 'Straddle' : 'N/A', livelloLeva: usaLeve ? 5 : 0, caricoTotaleKg: 83.0, zavorraKg: 15, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2656.0, volumeZavorraKg: isSec ? 0 : 480, rpe: 8.5, dettaglioSerie: '8 | 8 | 8 | 8' }
+      ];
+    }
+
+    // Startup
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
