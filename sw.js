@@ -1,10 +1,10 @@
-const CACHE_NAME = 'calitracker-v2';
+const CACHE_NAME = 'calitracker-v3';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json?v=2',
-  './icon-192.png?v=2',
-  './icon-512.png?v=2',
+  './manifest.json?v=3',
+  './icon-192.png?v=3',
+  './icon-512.png?v=3',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
