@@ -545,6 +545,49 @@
       background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, var(--surface-card) 60%);
     }
 
+    .routine-choice-card.is-reordering {
+      cursor: default;
+      border-style: dashed;
+    }
+
+    .routine-reorder-buttons-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-right: 4px;
+    }
+
+    .btn-routine-order-step {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-routine-order-step:hover:not(:disabled) {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .btn-routine-order-step:not(:disabled):active {
+      background: var(--accent-green);
+      color: #0d0f12;
+      transform: scale(0.92);
+    }
+
+    .btn-routine-order-step:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
     .routine-choice-top {
       display: flex;
       justify-content: space-between;
@@ -597,11 +640,37 @@
 
     .exercise-mini-pill {
       font-size: 0.72rem;
-      color: var(--text-muted);
+      color: #cbd5e1;
       background: var(--surface-elevated);
-      padding: 2px 7px;
+      padding: 3px 8px;
       border-radius: 6px;
+      border: 1px solid var(--border-subtle);
       white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .exercise-mini-pill.spinta {
+      background: rgba(59, 130, 246, 0.08);
+      border-color: rgba(59, 130, 246, 0.22);
+      color: #bfdbfe;
+    }
+
+    .exercise-mini-pill.tirata {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.22);
+      color: #a7f3d0;
+    }
+
+    .exercise-mini-pill.gambe {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.22);
+      color: #fde68a;
+    }
+
+    .exercise-mini-pill.addome {
+      background: rgba(168, 85, 247, 0.08);
+      border-color: rgba(168, 85, 247, 0.22);
+      color: #e9d5ff;
     }
 
     .routine-choice-empty-note {
@@ -1498,6 +1567,318 @@
       gap: 8px;
     }
 
+    /* TOGGLE SWITCH GROUP (Sì / No) */
+    .toggle-switch-group {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .toggle-switch-btn {
+      flex: 1;
+      min-height: 44px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .toggle-switch-btn.active {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: var(--accent-green);
+      color: #34d399;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+    }
+
+    /* TRIGGER INPUT PER TEMPO RECUPERO */
+    .time-picker-trigger-input {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 42px;
+      padding: 8px 12px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.2s;
+    }
+
+    .time-picker-trigger-input:hover,
+    .time-picker-trigger-input:active {
+      border-color: var(--accent-blue);
+    }
+
+    .time-picker-display {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #93c5fd;
+      font-family: monospace;
+    }
+
+    .time-picker-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* CLOCK PICKER (ROTELLINA RECUPERO) */
+    .clock-picker-card {
+      max-width: 360px;
+      text-align: center;
+      user-select: none;
+    }
+
+    .clock-dial-container {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      margin: 10px auto 16px auto;
+      touch-action: none;
+    }
+
+    .clock-dial-svg {
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .clock-dial-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.06);
+      stroke-width: 14;
+    }
+
+    .clock-dial-inner-ring {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.03);
+      stroke-width: 1;
+    }
+
+    .clock-dial-progress {
+      fill: none;
+      stroke: #3b82f6;
+      stroke-width: 14;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.5));
+    }
+
+    .clock-dial-knob {
+      fill: #ffffff;
+      stroke: #3b82f6;
+      stroke-width: 4;
+      cursor: grab;
+      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+      transition: transform 0.05s ease-out;
+    }
+
+    .clock-dial-knob:active {
+      cursor: grabbing;
+    }
+
+    .clock-dial-center-info {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .clock-dial-time {
+      font-size: 2.2rem;
+      font-weight: 800;
+      font-family: monospace;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .clock-dial-unit {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-top: 4px;
+    }
+
+    .clock-dial-sec-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .clock-steppers-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn-clock-step {
+      flex: 1;
+      padding: 8px 4px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-clock-step:active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+      color: #93c5fd;
+    }
+
+    .clock-presets-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .btn-clock-preset {
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-clock-preset:active,
+    .btn-clock-preset.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: #3b82f6;
+      color: #bfdbfe;
+    }
+
+    /* QUICK NUMBER PICKER (SERIE / REPS) */
+    .quick-number-card {
+      max-width: 360px;
+      user-select: none;
+    }
+
+    .quick-number-display-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin: 12px 0;
+    }
+
+    .btn-step-large {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-step-large:active {
+      background: var(--accent-green);
+      color: #0d0f12;
+      border-color: var(--accent-green);
+    }
+
+    .quick-number-current-val {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quick-number-big-digit {
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1;
+      font-family: monospace;
+      color: #ffffff;
+    }
+
+    .quick-number-unit {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-green);
+      margin-top: 4px;
+    }
+
+    .quick-number-substeppers {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .quick-number-presets-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .quick-number-presets-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .btn-quick-preset {
+      min-height: 40px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-quick-preset:active,
+    .btn-quick-preset.active {
+      background: var(--accent-green);
+      color: #0d0f12;
+      border-color: var(--accent-green);
+    }
+
     /* TOAST */
     .toast {
       position: fixed;
@@ -1537,6 +1918,19 @@
     .iso-modal {
       text-align: center;
       padding: 30px 20px;
+      transition: all 0.3s ease;
+    }
+
+    .iso-modal.target-reached {
+      border: 2px solid var(--accent-green) !important;
+      box-shadow: 0 0 35px rgba(16, 185, 129, 0.45), inset 0 0 25px rgba(16, 185, 129, 0.12);
+      background: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, var(--surface-card) 75%) !important;
+      animation: isoModalPulse 1.8s infinite alternate ease-in-out;
+    }
+
+    @keyframes isoModalPulse {
+      0% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.35); }
+      100% { box-shadow: 0 0 45px rgba(16, 185, 129, 0.7); }
     }
 
     .iso-stage-label {
@@ -1545,6 +1939,14 @@
       letter-spacing: 0.1em;
       color: var(--text-muted);
       margin-bottom: 8px;
+      transition: all 0.25s ease;
+    }
+
+    .iso-stage-label.target-reached {
+      color: var(--accent-green) !important;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
     }
 
     .iso-countdown {
@@ -1554,6 +1956,31 @@
       color: var(--accent-blue);
       margin: 10px 0;
       line-height: 1;
+      transition: color 0.25s ease;
+    }
+
+    .iso-countdown.target-reached {
+      color: var(--accent-green) !important;
+      text-shadow: 0 0 24px rgba(16, 185, 129, 0.7);
+      animation: isoPopPulse 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes isoPopPulse {
+      0% { transform: scale(0.85); opacity: 0.7; }
+      50% { transform: scale(1.18); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .btn-iso-finish.target-reached {
+      background: var(--accent-green) !important;
+      color: #0d0f12 !important;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+      animation: btnPulse 1.2s infinite alternate ease-in-out;
+    }
+
+    @keyframes btnPulse {
+      0% { transform: scale(1); box-shadow: 0 0 14px rgba(16, 185, 129, 0.5); }
+      100% { transform: scale(1.04); box-shadow: 0 0 26px rgba(16, 185, 129, 0.85); }
     }
 
     .iso-sub-target {
@@ -1740,8 +2167,8 @@
   <!-- TOP HEADER -->
   <header class="top-header">
     <div class="brand">
-      <span class="brand-icon">🏋️‍♂️</span>
-      <span>Allenamento</span>
+      <span class="brand-icon" id="headerBrandIcon">🏋️</span>
+      <span id="headerBrandText">Allenamento</span>
     </div>
     <div class="header-actions">
       <div class="badge-bw" id="headerBwBadge">BW: -- kg</div>
@@ -1993,11 +2420,11 @@
   <div class="modal-overlay" id="isoModal">
     <div class="modal-card iso-modal">
       <div class="iso-stage-label" id="isoStageLabel">Preparati...</div>
-      <div class="iso-countdown" id="isoCountdownDigits">3</div>
+      <div class="iso-countdown" id="isoCountdownDigits">5</div>
       <div class="iso-sub-target" id="isoSubTarget">Target: 8 secondi</div>
       <div style="display: flex; gap: 10px;">
         <button class="btn-action-small" id="btnIsoStop" style="background: var(--surface-elevated); color: var(--text-muted);">Annulla</button>
-        <button class="btn-action-small" id="btnIsoFinish" style="background: var(--accent-blue); color: #fff; font-weight: 700;">Concludi Serie</button>
+        <button class="btn-action-small btn-iso-finish" id="btnIsoFinish" style="background: var(--accent-blue); color: #fff; font-weight: 700;">Concludi Serie</button>
       </div>
     </div>
   </div>
@@ -2034,11 +2461,12 @@
       </div>
 
       <div class="input-group" style="margin-bottom: 16px;">
-        <label class="input-label">Usa Scala Leve (Tuck..Full)</label>
-        <select class="select-dark" id="newCatUsaLeve">
-          <option value="false">FALSE (Esercizio Standard / Zavorrato)</option>
-          <option value="true">TRUE (Con leve isometriche 1-7)</option>
-        </select>
+        <label class="input-label">Prevede leve?</label>
+        <div class="toggle-switch-group">
+          <button type="button" class="toggle-switch-btn active" id="btnCatUsaLeveNo" onclick="setNewCatUsaLeve(false)">No</button>
+          <button type="button" class="toggle-switch-btn" id="btnCatUsaLeveYes" onclick="setNewCatUsaLeve(true)">Sì</button>
+        </div>
+        <input type="hidden" id="newCatUsaLeve" value="false">
       </div>
 
       <div style="display: flex; gap: 10px;">
@@ -2066,11 +2494,11 @@
       <div class="routine-item-grid" style="margin-bottom: 12px;">
         <div class="input-group">
           <label class="input-label">Serie</label>
-          <input type="number" class="input-dark" id="modalAddSerie" value="4" min="1" max="30">
+          <input type="number" class="input-dark" id="modalAddSerie" value="4" min="1" max="30" readonly onclick="openQuickNumberPickerForElement(this, 'SERIE')" style="cursor: pointer;">
         </div>
         <div class="input-group">
           <label class="input-label" id="modalAddRepsLabel">Reps Target</label>
-          <input type="number" class="input-dark" id="modalAddReps" value="8" min="1" max="500">
+          <input type="number" class="input-dark" id="modalAddReps" value="8" min="1" max="500" readonly onclick="openQuickNumberPickerForElement(this, window.__modalAddRepsUnit || 'REPS')" style="cursor: pointer;">
         </div>
         <div class="input-group">
           <label class="input-label">Zavorra (kg)</label>
@@ -2084,8 +2512,12 @@
           <select class="select-dark" id="modalAddLeva"></select>
         </div>
         <div class="input-group" id="modalAddRecGroup">
-          <label class="input-label">Recupero (sec)</label>
-          <input type="number" step="10" class="input-dark" id="modalAddRec" value="120" min="10">
+          <label class="input-label">Recupero (tempo)</label>
+          <div class="time-picker-trigger-input" onclick="openRestClockPickerForAddModal()">
+            <span class="time-picker-display" id="modalAddRecDisplay">02:00 min</span>
+            <span class="time-picker-sub" id="modalAddRecSub">(120s) ⏱️</span>
+            <input type="hidden" id="modalAddRec" value="120">
+          </div>
         </div>
       </div>
 
@@ -2097,6 +2529,90 @@
       <div style="display: flex; gap: 10px;">
         <button class="btn-action-small" id="btnCancelAddExerciseModal" style="background: var(--surface-card); color: var(--text-muted);">Annulla</button>
         <button class="btn-action-small" id="btnConfirmAddExercise" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">Aggiungi alla Scheda</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE ROTELLINA OROLOGIO RECUPERO -->
+  <div class="modal-overlay" id="restClockPickerModal">
+    <div class="modal-card clock-picker-card">
+      <div class="modal-title">
+        <span>⏱️</span>
+        <span>Tempo di Recupero</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px;">
+        Trascina la ghiera orologio (scatti 5s) o usa i pulsanti rapidi
+      </p>
+
+      <div class="clock-dial-container" id="clockDialContainer">
+        <svg class="clock-dial-svg" viewBox="0 0 240 240" id="clockDialSvg">
+          <circle cx="120" cy="120" r="86" class="clock-dial-bg" />
+          <g id="clockDialTicksGroup"></g>
+          <path id="clockDialProgress" class="clock-dial-progress" d="" />
+          <circle id="clockDialKnob" class="clock-dial-knob" cx="120" cy="34" r="13" />
+          <circle cx="120" cy="120" r="66" class="clock-dial-inner-ring" />
+        </svg>
+
+        <div class="clock-dial-center-info">
+          <div class="clock-dial-time" id="clockDialDisplayTime">02:00</div>
+          <div class="clock-dial-unit" id="clockDialDisplayUnit">2m 00s</div>
+          <div class="clock-dial-sec-sub" id="clockDialDisplaySec">(120 sec)</div>
+        </div>
+      </div>
+
+      <div class="clock-steppers-row">
+        <button type="button" class="btn-clock-step" onclick="adjustClockSeconds(-15)">−15s</button>
+        <button type="button" class="btn-clock-step" onclick="adjustClockSeconds(-5)">−5s</button>
+        <button type="button" class="btn-clock-step" onclick="adjustClockSeconds(+5)">+5s</button>
+        <button type="button" class="btn-clock-step" onclick="adjustClockSeconds(+15)">+15s</button>
+      </div>
+
+      <div class="clock-presets-row">
+        <button type="button" class="btn-clock-preset" onclick="setClockSeconds(30)">0:30</button>
+        <button type="button" class="btn-clock-preset" onclick="setClockSeconds(60)">1:00</button>
+        <button type="button" class="btn-clock-preset" onclick="setClockSeconds(90)">1:30</button>
+        <button type="button" class="btn-clock-preset" onclick="setClockSeconds(120)">2:00</button>
+        <button type="button" class="btn-clock-preset" onclick="setClockSeconds(150)">2:30</button>
+        <button type="button" class="btn-clock-preset" onclick="setClockSeconds(180)">3:00</button>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 14px;">
+        <button type="button" class="btn-action-small" onclick="closeRestClockPickerModal()" style="background: var(--surface-card); color: var(--text-muted);">Annulla</button>
+        <button type="button" class="btn-action-small" onclick="confirmRestClockPicker()" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">✓ Imposta Recupero</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE SELETTORE RAPIDO NUMERI (SERIE / REPS) -->
+  <div class="modal-overlay" id="quickNumberPickerModal">
+    <div class="modal-card quick-number-card">
+      <div class="modal-title">
+        <span id="quickNumberIcon">⚡</span>
+        <span id="quickNumberTitle">Imposta Valore</span>
+      </div>
+
+      <div class="quick-number-display-box">
+        <button type="button" class="btn-step-large" onclick="adjustQuickNumber(-1)">−</button>
+        <div class="quick-number-current-val">
+          <span class="quick-number-big-digit" id="quickNumberDisplayDigit">8</span>
+          <span class="quick-number-unit" id="quickNumberDisplayUnit">reps</span>
+        </div>
+        <button type="button" class="btn-step-large" onclick="adjustQuickNumber(+1)">+</button>
+      </div>
+
+      <div class="quick-number-substeppers" id="quickNumberSubsteppers">
+        <button type="button" class="btn-clock-step" onclick="adjustQuickNumber(-5)">−5</button>
+        <button type="button" class="btn-clock-step" onclick="adjustQuickNumber(-2)">−2</button>
+        <button type="button" class="btn-clock-step" onclick="adjustQuickNumber(+2)">+2</button>
+        <button type="button" class="btn-clock-step" onclick="adjustQuickNumber(+5)">+5</button>
+      </div>
+
+      <div class="quick-number-presets-label">Scelta Rapida:</div>
+      <div class="quick-number-presets-grid" id="quickNumberPresetsGrid"></div>
+
+      <div style="display: flex; gap: 10px; margin-top: 12px;">
+        <button type="button" class="btn-action-small" id="btnQuickNumberManual" onclick="switchToManualKeyboard()" style="background: var(--surface-card); color: var(--text-muted); font-size: 0.8rem;">⌨️ Tastiera</button>
+        <button type="button" class="btn-action-small" onclick="confirmQuickNumberPicker()" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">✓ Conferma</button>
       </div>
     </div>
   </div>
@@ -2127,7 +2643,10 @@
           <div class="modal-routine-title">Seleziona Allenamento</div>
           <div class="modal-routine-subtitle">Scegli la scheda da eseguire oggi</div>
         </div>
-        <button type="button" class="btn-modal-close" onclick="closeRoutinePickerModal()" title="Chiudi">✕</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn-action-small" id="btnToggleReorderRoutines" onclick="toggleReorderRoutinesMode()" style="padding: 5px 10px; font-size: 0.78rem; background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-muted); font-weight: 600; cursor: pointer;">✏️ Modifica Ordine</button>
+          <button type="button" class="btn-modal-close" onclick="closeRoutinePickerModal()" title="Chiudi">✕</button>
+        </div>
       </div>
       <div class="routine-cards-scroll-container" id="routinePickerCardsList">
         <!-- Generato dinamicamente con anteprima settori ed esercizi -->
@@ -2378,21 +2897,31 @@
       getAudioContext();
     }, { once: true });
 
-    function playBeep(frequency = 600, durationMs = 120, type = 'sine') {
+    function playBeep(frequency = 600, durationMs = 120, type = 'triangle') {
       if (!soundEnabled) return;
       try {
         const ctx = getAudioContext();
         if (!ctx) return;
+        const now = ctx.currentTime;
+        const durSec = Math.max(0.04, durationMs / 1000);
+
+        // Timbro "Triangle / Warm Pluck": onda triangolare ricca di armoniche calde e presenza acustica
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (durationMs / 1000));
+
+        osc.type = (type === 'sine') ? 'triangle' : (type || 'triangle');
+        osc.frequency.setValueAtTime(frequency, now);
+
+        // Inviluppo caldo con attacco immediato (6ms) per evitare click e decay esponenziale morbido
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.24, now + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + durSec);
+
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + (durationMs / 1000));
+
+        osc.start(now);
+        osc.stop(now + durSec);
       } catch (e) {
         console.error('Audio play error:', e);
       }
@@ -2545,6 +3074,7 @@
     // ==========================================
     function initApp() {
       updateSoundButtonUI();
+      initClockDialTicks();
 
       // Se stiamo usando il bridge esterno e l'URL non è ancora configurato, apri subito la configurazione
       if (typeof google !== 'undefined' && google.script && google.script.run && google.script.run._isPolyfill && !getGasApiUrl()) {
@@ -2705,7 +3235,7 @@
           }
 
           // Restore or default inputs with intelligent alignment
-          let curLeva = catInfo.usaLeve ? ((item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : 'Straddle') : 'N/A';
+          let curLeva = catInfo.usaLeve ? ((item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : 'Straddle') : '';
           let curZav = (item.zavorraTargetKg !== undefined && !isNaN(item.zavorraTargetKg)) ? item.zavorraTargetKg : 0;
           let curRpe = null;
           let curNote = '';
@@ -2716,7 +3246,7 @@
             if (catInfo.usaLeve) {
               curLeva = (sEx.levaUsata && sEx.levaUsata !== 'N/A') ? sEx.levaUsata : ((item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : 'Straddle');
             } else {
-              curLeva = 'N/A';
+              curLeva = '';
             }
             curZav = (sEx.zavorraKg !== undefined && !isNaN(parseFloat(sEx.zavorraKg))) ? parseFloat(sEx.zavorraKg) : (item.zavorraTargetKg || 0);
             if (sEx.rpe !== null && sEx.rpe !== undefined && sEx.rpe !== '' && !isNaN(parseFloat(sEx.rpe))) {
@@ -2743,7 +3273,7 @@
                 seriesValues.push(item.repsSecTarget);
               }
               curZav = item.zavorraTargetKg || 0;
-              curLeva = catInfo.usaLeve ? ((item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : 'Straddle') : 'N/A';
+              curLeva = catInfo.usaLeve ? ((item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : 'Straddle') : '';
             }
           } else {
             for (let s = 0; s < item.serieTarget; s++) {
@@ -2822,7 +3352,7 @@
                       ${getLeveOptionsHtml(curLeva, true)}
                     </select>
                   </div>
-                ` : `<input type="hidden" class="ex-leva" value="N/A">`}
+                ` : `<input type="hidden" class="ex-leva" value="">`}
                 <div class="input-group">
                   <label class="input-label">Zavorra (Kg)</label>
                   <input type="number" step="0.5" inputmode="decimal" class="input-dark ex-zavorra" value="${curZav}" onchange="saveActiveWorkoutToStorage()">
@@ -2927,8 +3457,8 @@
         return `
           <div class="series-row ${isDone ? 'completed' : ''}" id="seriesRow_${exIdx}_${sIdx}">
             <div class="series-num">${sIdx + 1}</div>
-            <div class="series-input-wrapper">
-              <input type="number" inputmode="decimal" class="series-input" value="${val}" onchange="saveActiveWorkoutToStorage()" id="seriesInput_${exIdx}_${sIdx}">
+            <div class="series-input-wrapper" onclick="openQuickNumberPickerForSeries(${exIdx}, ${sIdx}, '${unit}')">
+              <input type="number" inputmode="decimal" class="series-input" value="${val}" onchange="saveActiveWorkoutToStorage()" id="seriesInput_${exIdx}_${sIdx}" readonly style="cursor: pointer;">
               <span class="series-unit">${unit}</span>
             </div>
             <button class="btn-check" onclick="toggleSeriesCheck(${exIdx}, ${sIdx})">
@@ -2971,8 +3501,8 @@
       const newRowHtml = `
         <div class="series-row" id="seriesRow_${exIdx}_${newIdx}">
           <div class="series-num">${newIdx + 1}</div>
-          <div class="series-input-wrapper">
-            <input type="number" inputmode="decimal" class="series-input" value="${lastVal}" onchange="saveActiveWorkoutToStorage()" id="seriesInput_${exIdx}_${newIdx}">
+          <div class="series-input-wrapper" onclick="openQuickNumberPickerForSeries(${exIdx}, ${newIdx}, '${unit}')">
+            <input type="number" inputmode="decimal" class="series-input" value="${lastVal}" onchange="saveActiveWorkoutToStorage()" id="seriesInput_${exIdx}_${newIdx}" readonly style="cursor: pointer;">
             <span class="series-unit">${unit}</span>
           </div>
           <button class="btn-check" onclick="toggleSeriesCheck(${exIdx}, ${newIdx})"></button>
@@ -2995,7 +3525,7 @@
 
     function getLeveOptionsHtml(selectedLeva, usaLeve) {
       if (!usaLeve) {
-        return `<option value="N/A" selected>N/A</option>`;
+        return `<option value="" selected></option>`;
       }
       const leve = ['Tuck', 'Adv Tuck', 'One Leg', 'Half Lay Straddle', 'Straddle', 'Half Lay', 'Full'];
       const activeLeva = (selectedLeva && selectedLeva !== 'N/A') ? selectedLeva : 'Straddle';
@@ -3100,6 +3630,17 @@
     // ==========================================
     // ISOMETRIC ASSISTANT (COUNTDOWN & BEEP)
     // ==========================================
+    function resetIsoCelebration() {
+      const isoCard = document.querySelector('.iso-modal');
+      if (isoCard) isoCard.classList.remove('target-reached');
+      const digits = document.getElementById('isoCountdownDigits');
+      if (digits) digits.classList.remove('target-reached');
+      const label = document.getElementById('isoStageLabel');
+      if (label) label.classList.remove('target-reached');
+      const finishBtn = document.getElementById('btnIsoFinish');
+      if (finishBtn) finishBtn.classList.remove('target-reached');
+    }
+
     function startIsometricAssistant(exIdx) {
       const card = document.querySelector(`[data-exercise-idx="${exIdx}"]`);
       const grid = document.getElementById(`seriesGrid_${exIdx}`);
@@ -3117,10 +3658,11 @@
 
       const inputVal = parseInt(document.getElementById(`seriesInput_${exIdx}_${targetRowIdx}`).value, 10) || 8;
       currentIsoContext = { exIdx, seriesIdx: targetRowIdx, targetSec: inputVal };
+      resetIsoCelebration();
 
       isoStage = 'prep';
-      let prepCount = 3;
-      document.getElementById('isoStageLabel').textContent = 'Preparati agli attrezzi...';
+      let prepCount = 5;
+      document.getElementById('isoStageLabel').textContent = 'Preparati agli attrezzi (5s)...';
       document.getElementById('isoCountdownDigits').textContent = prepCount;
       document.getElementById('isoSubTarget').textContent = `Serie ${targetRowIdx + 1} - Target: ${inputVal}s`;
       document.getElementById('isoModal').classList.add('active');
@@ -3148,9 +3690,20 @@
           document.getElementById('isoCountdownDigits').textContent = `${isoSecondsElapsed}s`;
 
           if (isoSecondsElapsed === currentIsoContext.targetSec) {
+            const isoCard = document.querySelector('.iso-modal');
+            if (isoCard) isoCard.classList.add('target-reached');
+            const digits = document.getElementById('isoCountdownDigits');
+            if (digits) digits.classList.add('target-reached');
+            const label = document.getElementById('isoStageLabel');
+            if (label) {
+              label.textContent = '✓ TARGET RAGGIUNTO!';
+              label.classList.add('target-reached');
+            }
+            const finishBtn = document.getElementById('btnIsoFinish');
+            if (finishBtn) finishBtn.classList.add('target-reached');
+
             playBeep(1200, 350);
             triggerVibration([200, 100, 200]);
-            document.getElementById('isoStageLabel').textContent = '🎯 TARGET RAGGIUNTO!';
           } else {
             playBeep(659, 40);
           }
@@ -3160,6 +3713,7 @@
 
     document.getElementById('btnIsoFinish').addEventListener('click', () => {
       clearInterval(isoInterval);
+      resetIsoCelebration();
       document.getElementById('isoModal').classList.remove('active');
 
       if (currentIsoContext && isoStage === 'hold') {
@@ -3173,6 +3727,7 @@
 
     document.getElementById('btnIsoStop').addEventListener('click', () => {
       clearInterval(isoInterval);
+      resetIsoCelebration();
       document.getElementById('isoModal').classList.remove('active');
     });
 
@@ -3209,7 +3764,8 @@
       cards.forEach(card => {
         const exIdx = card.getAttribute('data-exercise-idx');
         const nomeEsercizio = card.getAttribute('data-exercise-name');
-        const levaUsata = card.querySelector('.ex-leva').value;
+        const levaRaw = card.querySelector('.ex-leva') ? card.querySelector('.ex-leva').value : '';
+        const levaUsata = (levaRaw === 'N/A') ? '' : levaRaw;
         const zavorraKg = parseFloat(card.querySelector('.ex-zavorra').value) || 0;
         const rpeBar = card.querySelector('.rpe-control-bar');
         const rpeAttr = rpeBar ? rpeBar.getAttribute('data-rpe-val') : '';
@@ -3302,12 +3858,15 @@
       document.getElementById('sumBwUsed').textContent = `${bwUsed.toFixed(1)} kg`;
       document.getElementById('sumTotalVolume').textContent = `${((res && res.totalVolumeSessione) || 0).toLocaleString()} kg`;
 
-      // Raggruppamento per settore e ordinamento per numero di esercizi decrescente
-      // Permette di visualizzare subito il settore principale/più stressato della sessione
-      const sectorGroups = {};
+      // Raggruppamento per settore secondo la logica deterministica di presentazione:
+      // 1° e 2° posto: chi ha più esercizi tra Spinta e Tirata (a parità: Spinta, poi Tirata)
+      // 3° posto: Addome
+      // 4° posto (sempre ultimo): Gambe
+      const sectorGroups = { Spinta: [], Tirata: [], Gambe: [], Addome: [] };
       exercisesPayload.forEach((ex, origIdx) => {
-        const catItem = (appData.catalogExercises || []).find(c => c.nomeEsercizio.toLowerCase() === ex.nomeEsercizio.toLowerCase());
-        const rawSettore = catItem ? catItem.settore : '';
+        const catalogList = (appData && (appData.catalog || appData.catalogExercises)) || [];
+        const catItem = catalogList.find(c => (c.nome || c.nomeEsercizio || '').toLowerCase() === (ex.nomeEsercizio || '').toLowerCase());
+        const rawSettore = catItem ? (catItem.settore || '') : '';
         const settore = normalizeSettore(rawSettore, ex.nomeEsercizio);
         if (!sectorGroups[settore]) {
           sectorGroups[settore] = [];
@@ -3315,11 +3874,13 @@
         sectorGroups[settore].push({ ...ex, origIdx });
       });
 
-      const sortedSectors = Object.keys(sectorGroups).sort((a, b) => {
-        const diff = sectorGroups[b].length - sectorGroups[a].length;
-        if (diff !== 0) return diff;
-        return a.localeCompare(b);
-      });
+      const countSpinta = (sectorGroups.Spinta || []).length;
+      const countTirata = (sectorGroups.Tirata || []).length;
+      let primarySectors = (countTirata > countSpinta) ? ['Tirata', 'Spinta'] : ['Spinta', 'Tirata'];
+      const sectorPriority = [...primarySectors, 'Addome', 'Gambe'];
+
+      // Filtra solo i settori con almeno un esercizio completato
+      const sortedSectors = sectorPriority.filter(s => sectorGroups[s] && sectorGroups[s].length > 0);
 
       const sectorIcons = {
         'Spinta': '🤸',
@@ -3438,7 +3999,8 @@
       cards.forEach(card => {
         const exIdx = card.getAttribute('data-exercise-idx');
         const nomeEsercizio = card.getAttribute('data-exercise-name');
-        const levaUsata = card.querySelector('.ex-leva').value;
+        const levaRaw = card.querySelector('.ex-leva') ? card.querySelector('.ex-leva').value : '';
+        const levaUsata = (levaRaw === 'N/A') ? '' : levaRaw;
         const zavorraKg = parseFloat(card.querySelector('.ex-zavorra').value) || 0;
         const rpeBar = card.querySelector('.rpe-control-bar');
         const rpeAttr = rpeBar ? rpeBar.getAttribute('data-rpe-val') : '';
@@ -3492,7 +4054,7 @@
           for (let s = 0; s < item.serieTarget; s++) sArr.push(item.repsSecTarget);
           return {
             nomeEsercizio: item.nomeEsercizio,
-            levaUsata: item.levaTarget || 'N/A',
+            levaUsata: (item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : '',
             zavorraKg: item.zavorraTargetKg || 0,
             rpe: null,
             noteGiorno: '',
@@ -3526,7 +4088,7 @@
           return {
             ...existing,
             nomeEsercizio: item.nomeEsercizio,
-            levaUsata: item.levaTarget || 'N/A',
+            levaUsata: (item.levaTarget && item.levaTarget !== 'N/A') ? item.levaTarget : '',
             zavorraKg: item.zavorraTargetKg || 0,
             serieArray: newArr,
             completedMap: {}
@@ -3579,6 +4141,66 @@
     function closeRoutinePickerModal() {
       const modal = document.getElementById('routinePickerModal');
       if (modal) modal.style.display = 'none';
+      if (isReorderingRoutinesMode) {
+        toggleReorderRoutinesMode();
+      }
+    }
+
+    let isReorderingRoutinesMode = false;
+
+    function toggleReorderRoutinesMode() {
+      isReorderingRoutinesMode = !isReorderingRoutinesMode;
+      const btn = document.getElementById('btnToggleReorderRoutines');
+      if (btn) {
+        if (isReorderingRoutinesMode) {
+          btn.innerHTML = '✓ Fine';
+          btn.style.background = 'var(--accent-green)';
+          btn.style.color = '#0d0f12';
+          btn.style.borderColor = 'var(--accent-green)';
+        } else {
+          btn.innerHTML = '✏️ Modifica Ordine';
+          btn.style.background = 'var(--surface-elevated)';
+          btn.style.color = 'var(--text-muted)';
+          btn.style.borderColor = 'var(--border-subtle)';
+        }
+      }
+      renderRoutinePickerModalContent();
+    }
+
+    function moveRoutineOrder(schedaName, direction) {
+      if (!appData || !appData.routines) return;
+      const keys = Object.keys(appData.routines);
+      const currIdx = keys.indexOf(schedaName);
+      if (currIdx === -1) return;
+      const targetIdx = currIdx + direction;
+      if (targetIdx < 0 || targetIdx >= keys.length) return;
+
+      const temp = keys[currIdx];
+      keys[currIdx] = keys[targetIdx];
+      keys[targetIdx] = temp;
+
+      const newRoutines = {};
+      keys.forEach(k => {
+        newRoutines[k] = appData.routines[k];
+      });
+      appData.routines = newRoutines;
+
+      renderRoutinePickerModalContent();
+      updateActiveRoutineDisplay();
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            showToast('Ordine schede sincronizzato!', 'success');
+          })
+          .withFailureHandler((err) => {
+            console.warn('Avviso salvataggio ordine schede:', err);
+            showToast('Ordine aggiornato localmente', 'info');
+          })
+          .reorderRoutines(keys);
+      } else {
+        showToast('Ordine schede aggiornato!', 'success');
+      }
     }
 
     function handleRoutinePickerBackdropClick(e) {
@@ -3607,7 +4229,7 @@
       const routines = (appData && appData.routines) ? appData.routines : {};
       const routineKeys = Object.keys(routines);
 
-      const cardsHtml = routineKeys.map(schedaName => {
+      const cardsHtml = routineKeys.map((schedaName, idx) => {
         const exercises = routines[schedaName] || [];
         const isActive = (schedaName === activeRoutine);
 
@@ -3623,24 +4245,48 @@
           }
         });
 
-        const sectorBadgesHtml = [
-          sectorCounts.Spinta > 0 ? `<span class="sector-mini-badge spinta">🤸 Spinta: ${sectorCounts.Spinta}</span>` : '',
-          sectorCounts.Tirata > 0 ? `<span class="sector-mini-badge tirata">🧗 Tirata: ${sectorCounts.Tirata}</span>` : '',
-          sectorCounts.Gambe > 0 ? `<span class="sector-mini-badge gambe">🦵 Gambe: ${sectorCounts.Gambe}</span>` : '',
-          sectorCounts.Addome > 0 ? `<span class="sector-mini-badge addome">🫃🏻 Addome: ${sectorCounts.Addome}</span>` : ''
-        ].filter(Boolean).join('');
+        // Ordinamento categorie richiesto:
+        // 1° e 2° posto: chi ha più esercizi tra Spinta e Tirata (a parità: Spinta, poi Tirata)
+        // 3° posto: Addome
+        // 4° posto (sempre ultimo): Gambe
+        let primarySectors = (sectorCounts.Tirata > sectorCounts.Spinta) ? ['Tirata', 'Spinta'] : ['Spinta', 'Tirata'];
+        const orderedSectors = [...primarySectors, 'Addome', 'Gambe'];
+
+        const sectorBadgesHtml = orderedSectors.map(sec => {
+          const count = sectorCounts[sec] || 0;
+          if (count <= 0) return '';
+          const icon = sec === 'Spinta' ? '🤸' : (sec === 'Tirata' ? '🧗' : (sec === 'Gambe' ? '🦵' : '🫃🏻'));
+          const secClass = sec.toLowerCase();
+          return `<span class="sector-mini-badge ${secClass}">${icon} ${sec}: ${count}</span>`;
+        }).filter(Boolean).join('');
 
         const exercisesPillsHtml = exercises.length > 0
-          ? exercises.map(ex => `<span class="exercise-mini-pill">${escapeHtml(ex.nomeEsercizio)}</span>`).join('')
+          ? exercises.map(ex => {
+              const cat = (appData.catalog || []).find(c => c && c.nome && c.nome.toLowerCase() === (ex.nomeEsercizio || '').toLowerCase());
+              const sec = normalizeSettore(cat ? cat.settore : '', ex.nomeEsercizio);
+              const secClass = sec.toLowerCase();
+              return `<span class="exercise-mini-pill ${secClass}">${escapeHtml(ex.nomeEsercizio)}</span>`;
+            }).join('')
           : `<span class="routine-choice-empty-note">Nessun esercizio (configuralo nel tab Schede)</span>`;
 
+        const clickAttr = isReorderingRoutinesMode ? '' : `onclick="selectRoutineFromPicker('${escapeHtml(schedaName)}')"` ;
+        const reorderBtnsHtml = isReorderingRoutinesMode ? `
+          <div class="routine-reorder-buttons-group" onclick="event.stopPropagation()">
+            <button type="button" class="btn-routine-order-step" onclick="moveRoutineOrder('${escapeHtml(schedaName)}', -1)" ${idx === 0 ? 'disabled' : ''} title="Sposta in alto">▲</button>
+            <button type="button" class="btn-routine-order-step" onclick="moveRoutineOrder('${escapeHtml(schedaName)}', 1)" ${idx === routineKeys.length - 1 ? 'disabled' : ''} title="Sposta in basso">▼</button>
+          </div>
+        ` : '';
+
         return `
-          <div class="routine-choice-card ${isActive ? 'is-active' : ''}" onclick="selectRoutineFromPicker('${escapeHtml(schedaName)}')">
+          <div class="routine-choice-card ${isActive ? 'is-active' : ''} ${isReorderingRoutinesMode ? 'is-reordering' : ''}" ${clickAttr}>
             <div class="routine-choice-top">
               <div class="routine-choice-name">
                 ${isActive ? '⚡ ' : ''}${escapeHtml(schedaName)}
               </div>
-              <span class="routine-choice-count">${exercises.length} ${exercises.length === 1 ? 'es.' : 'es.'}</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                ${reorderBtnsHtml}
+                <span class="routine-choice-count">${exercises.length} ${exercises.length === 1 ? 'es.' : 'es.'}</span>
+              </div>
             </div>
 
             ${sectorBadgesHtml ? `<div class="routine-sector-badges-row">${sectorBadgesHtml}</div>` : ''}
@@ -3652,7 +4298,7 @@
         `;
       }).join('');
 
-      const addBtnHtml = `
+      const addBtnHtml = isReorderingRoutinesMode ? '' : `
         <div class="routine-choice-add-card" onclick="handleAddNewRoutineFromPicker()" title="Crea una nuova scheda di allenamento">
           <span style="font-size: 1.15rem;">➕</span>
           <span>Nuova Scheda</span>
@@ -3864,6 +4510,366 @@
     }
 
     // ==========================================
+    // MODALE ROTELLINA OROLOGIO RECUPERO (5s steps, min:sec display)
+    // ==========================================
+    let currentClockSeconds = 120;
+    let onClockConfirmCallback = null;
+    let isDraggingClock = false;
+    let clockTicksInitialized = false;
+
+    function initClockDialTicks() {
+      if (clockTicksInitialized) return;
+      const ticksGroup = document.getElementById('clockDialTicksGroup');
+      if (!ticksGroup) return;
+
+      // 60 ticks around the clock face (each 6 deg = 5 seconds)
+      let svgHtml = '';
+      for (let i = 0; i < 60; i++) {
+        const deg = i * 6;
+        const rad = (deg - 90) * (Math.PI / 180);
+        const isMajor = (i % 12 === 0); // Ogni 60s (1 minuto)
+        const isMedium = (i % 6 === 0 && !isMajor); // Ogni 30s
+        const rOuter = 86;
+        const rInner = isMajor ? 73 : (isMedium ? 77 : 81);
+        const strokeColor = isMajor ? 'rgba(255, 255, 255, 0.45)' : (isMedium ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.12)');
+        const strokeWidth = isMajor ? 2 : (isMedium ? 1.5 : 1);
+
+        const x1 = 120 + rInner * Math.cos(rad);
+        const y1 = 120 + rInner * Math.sin(rad);
+        const x2 = 120 + rOuter * Math.cos(rad);
+        const y2 = 120 + rOuter * Math.sin(rad);
+
+        svgHtml += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+
+        if (isMajor && i > 0) {
+          const minuteNum = i / 12;
+          const rText = 61;
+          const tx = 120 + rText * Math.cos(rad);
+          const ty = 120 + rText * Math.sin(rad);
+          svgHtml += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" fill="#94a3b8" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="central">${minuteNum}m</text>`;
+        }
+      }
+      ticksGroup.innerHTML = svgHtml;
+      clockTicksInitialized = true;
+      setupClockDialEvents();
+    }
+
+    function setupClockDialEvents() {
+      const container = document.getElementById('clockDialContainer');
+      const svg = document.getElementById('clockDialSvg');
+      if (!svg || !container) return;
+
+      function handlePointer(e) {
+        const rect = svg.getBoundingClientRect();
+        const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const x = clientX - cx;
+        const y = clientY - cy;
+
+        let deg = Math.atan2(y, x) * (180 / Math.PI) + 90;
+        if (deg < 0) deg += 360;
+
+        // Snap to nearest 5s on a 300s clock: 300 / 360 = 5/6 s per deg
+        let snappedSec = Math.round((deg / 360) * 300 / 5) * 5;
+        if (snappedSec < 5 && deg < 15) snappedSec = 5;
+        if (snappedSec === 0 && deg > 345) snappedSec = 300;
+        if (snappedSec < 5) snappedSec = 5;
+        if (snappedSec > 300) snappedSec = 300;
+
+        currentClockSeconds = snappedSec;
+        updateClockDialVisuals();
+      }
+
+      svg.addEventListener('pointerdown', (e) => {
+        isDraggingClock = true;
+        try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+        handlePointer(e);
+      });
+
+      svg.addEventListener('pointermove', (e) => {
+        if (!isDraggingClock) return;
+        handlePointer(e);
+      });
+
+      function stopDragging(e) {
+        if (!isDraggingClock) return;
+        isDraggingClock = false;
+        try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+
+      svg.addEventListener('pointerup', stopDragging);
+      svg.addEventListener('pointercancel', stopDragging);
+    }
+
+    function updateClockDialVisuals() {
+      const sec = currentClockSeconds;
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+
+      const timeEl = document.getElementById('clockDialDisplayTime');
+      const unitEl = document.getElementById('clockDialDisplayUnit');
+      const secEl = document.getElementById('clockDialDisplaySec');
+
+      if (timeEl) timeEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      if (unitEl) unitEl.textContent = `${m > 0 ? m + 'm ' : ''}${s}s`;
+      if (secEl) secEl.textContent = `(${sec} sec)`;
+
+      // Arc & Knob angle (0 to 300s = 0 to 360deg)
+      const ratio = Math.min(1, Math.max(0, sec / 300));
+      const angleDeg = ratio * 360;
+      const angleRad = (angleDeg - 90) * (Math.PI / 180);
+      const knobX = 120 + 86 * Math.cos(angleRad);
+      const knobY = 120 + 86 * Math.sin(angleRad);
+
+      const knob = document.getElementById('clockDialKnob');
+      if (knob) {
+        knob.setAttribute('cx', knobX.toFixed(1));
+        knob.setAttribute('cy', knobY.toFixed(1));
+      }
+
+      const progress = document.getElementById('clockDialProgress');
+      if (progress) {
+        if (angleDeg <= 0.1) {
+          progress.setAttribute('d', '');
+        } else if (angleDeg >= 359.9) {
+          progress.setAttribute('d', 'M 120 34 A 86 86 0 1 1 119.99 34');
+        } else {
+          const largeArc = angleDeg > 180 ? 1 : 0;
+          progress.setAttribute('d', `M 120 34 A 86 86 0 ${largeArc} 1 ${knobX.toFixed(1)} ${knobY.toFixed(1)}`);
+        }
+      }
+
+      // Presets active style
+      document.querySelectorAll('.btn-clock-preset').forEach(btn => {
+        const match = btn.getAttribute('onclick') && btn.getAttribute('onclick').match(/\d+/);
+        if (match) {
+          const val = parseInt(match[0], 10);
+          btn.classList.toggle('active', val === sec);
+        }
+      });
+    }
+
+    function setClockSeconds(sec) {
+      currentClockSeconds = Math.max(5, Math.min(600, parseInt(sec, 10) || 120));
+      updateClockDialVisuals();
+    }
+
+    function adjustClockSeconds(delta) {
+      currentClockSeconds = Math.max(5, Math.min(600, currentClockSeconds + delta));
+      updateClockDialVisuals();
+    }
+
+    function openRestClockPickerModal(initialSec, callback) {
+      initClockDialTicks();
+      currentClockSeconds = Math.max(5, parseInt(initialSec, 10) || 120);
+      onClockConfirmCallback = callback;
+      updateClockDialVisuals();
+      const modal = document.getElementById('restClockPickerModal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeRestClockPickerModal() {
+      const modal = document.getElementById('restClockPickerModal');
+      if (modal) modal.classList.remove('active');
+      onClockConfirmCallback = null;
+    }
+
+    function confirmRestClockPicker() {
+      if (typeof onClockConfirmCallback === 'function') {
+        onClockConfirmCallback(currentClockSeconds);
+      }
+      closeRestClockPickerModal();
+    }
+
+    function openRestClockPickerForAddModal() {
+      const currentVal = parseInt(document.getElementById('modalAddRec').value, 10) || 120;
+      openRestClockPickerModal(currentVal, (newSec) => {
+        document.getElementById('modalAddRec').value = newSec;
+        const disp = document.getElementById('modalAddRecDisplay');
+        if (disp) disp.textContent = `${formatTimeSec(newSec)} min`;
+        const sub = document.getElementById('modalAddRecSub');
+        if (sub) sub.textContent = `(${newSec}s) ⏱️`;
+      });
+    }
+
+    function openRestClockPickerForRoutineItem(idx) {
+      const routine = appData.routines[activeRoutine];
+      if (!routine || !routine[idx]) return;
+      const currentVal = parseInt(routine[idx].recuperoSec, 10) || 120;
+      openRestClockPickerModal(currentVal, (newSec) => {
+        routine[idx].recuperoSec = newSec;
+        const input = document.getElementById(`itemRecInput_${idx}`);
+        if (input) input.value = newSec;
+        const disp = document.getElementById(`itemRecDisplay_${idx}`);
+        if (disp) disp.textContent = `${formatTimeSec(newSec)} min`;
+        const sub = document.getElementById(`itemRecSub_${idx}`);
+        if (sub) sub.textContent = `(${newSec}s) ⏱️`;
+      });
+    }
+
+    // ==========================================
+    // MODALE SELETTORE RAPIDO SERIE / REPS / SEC
+    // ==========================================
+    let currentQuickNumber = 8;
+    let quickNumberMode = 'REPS'; // 'SERIE' | 'REPS' | 'SEC'
+    let onQuickNumberConfirm = null;
+    let targetInputForManual = null;
+
+    function openQuickNumberPicker(options) {
+      currentQuickNumber = Math.max(1, parseInt(options.initialVal, 10) || 1);
+      quickNumberMode = options.mode || 'REPS';
+      onQuickNumberConfirm = options.onConfirm || null;
+      targetInputForManual = options.targetInput || null;
+
+      const titleEl = document.getElementById('quickNumberTitle');
+      const iconEl = document.getElementById('quickNumberIcon');
+      const unitEl = document.getElementById('quickNumberDisplayUnit');
+      const presetsGrid = document.getElementById('quickNumberPresetsGrid');
+      const manualBtn = document.getElementById('btnQuickNumberManual');
+
+      if (manualBtn) manualBtn.style.display = targetInputForManual ? 'inline-block' : 'none';
+
+      let presets = [];
+      if (quickNumberMode === 'SERIE') {
+        if (titleEl) titleEl.textContent = 'Serie Target';
+        if (iconEl) iconEl.textContent = '🎯';
+        if (unitEl) unitEl.textContent = 'serie';
+        presets = [1, 2, 3, 4, 5, 6, 8, 10];
+      } else if (quickNumberMode === 'SEC') {
+        if (titleEl) titleEl.textContent = 'Secondi Isometria';
+        if (iconEl) iconEl.textContent = '⏱️';
+        if (unitEl) unitEl.textContent = 'sec';
+        presets = [5, 8, 10, 12, 15, 20, 25, 30, 40, 45, 60, 90];
+      } else {
+        if (titleEl) titleEl.textContent = 'Ripetizioni';
+        if (iconEl) iconEl.textContent = '⚡';
+        if (unitEl) unitEl.textContent = 'reps';
+        presets = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15];
+      }
+
+      updateQuickNumberDisplay();
+
+      if (presetsGrid) {
+        presetsGrid.innerHTML = presets.map(p => `
+          <button type="button" class="btn-quick-preset ${p === currentQuickNumber ? 'active' : ''}" onclick="setQuickNumber(${p})">
+            ${p}${quickNumberMode === 'SEC' ? 's' : ''}
+          </button>
+        `).join('');
+      }
+
+      const modal = document.getElementById('quickNumberPickerModal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function updateQuickNumberDisplay() {
+      const digitEl = document.getElementById('quickNumberDisplayDigit');
+      if (digitEl) digitEl.textContent = currentQuickNumber;
+      document.querySelectorAll('.btn-quick-preset').forEach(btn => {
+        const val = parseInt(btn.textContent, 10);
+        btn.classList.toggle('active', val === currentQuickNumber);
+      });
+    }
+
+    function adjustQuickNumber(delta) {
+      currentQuickNumber = Math.max(1, currentQuickNumber + delta);
+      updateQuickNumberDisplay();
+    }
+
+    function setQuickNumber(val) {
+      currentQuickNumber = Math.max(1, parseInt(val, 10) || 1);
+      updateQuickNumberDisplay();
+    }
+
+    function closeQuickNumberPickerModal() {
+      const modal = document.getElementById('quickNumberPickerModal');
+      if (modal) modal.classList.remove('active');
+      onQuickNumberConfirm = null;
+      targetInputForManual = null;
+    }
+
+    function confirmQuickNumberPicker() {
+      if (typeof onQuickNumberConfirm === 'function') {
+        onQuickNumberConfirm(currentQuickNumber);
+      }
+      closeQuickNumberPickerModal();
+    }
+
+    function switchToManualKeyboard() {
+      const input = targetInputForManual;
+      closeQuickNumberPickerModal();
+      if (input) {
+        input.removeAttribute('readonly');
+        input.focus();
+        if (typeof input.select === 'function') input.select();
+      }
+    }
+
+    function openQuickNumberPickerForSeries(exIdx, sIdx, unit) {
+      const input = document.getElementById(`seriesInput_${exIdx}_${sIdx}`);
+      const currentVal = input ? (parseFloat(input.value) || 8) : 8;
+      const mode = (unit === 'SEC') ? 'SEC' : 'REPS';
+      openQuickNumberPicker({
+        initialVal: currentVal,
+        mode: mode,
+        targetInput: input,
+        onConfirm: (newVal) => {
+          if (input) {
+            input.value = newVal;
+            saveActiveWorkoutToStorage();
+          }
+        }
+      });
+    }
+
+    function openQuickNumberPickerForEditorItem(idx, mode) {
+      const routine = appData.routines[activeRoutine];
+      if (!routine || !routine[idx]) return;
+      const isSerie = (mode === 'SERIE');
+      const currentVal = isSerie ? routine[idx].serieTarget : routine[idx].repsSecTarget;
+      const targetInput = isSerie ? document.querySelectorAll('.item-serie')[idx] : document.querySelectorAll('.item-reps')[idx];
+      openQuickNumberPicker({
+        initialVal: currentVal,
+        mode: mode,
+        targetInput: targetInput,
+        onConfirm: (newVal) => {
+          if (isSerie) {
+            routine[idx].serieTarget = newVal;
+            if (targetInput) targetInput.value = newVal;
+          } else {
+            routine[idx].repsSecTarget = newVal;
+            if (targetInput) targetInput.value = newVal;
+          }
+        }
+      });
+    }
+
+    function openQuickNumberPickerForElement(inputEl, mode) {
+      if (!inputEl) return;
+      const currentVal = parseInt(inputEl.value, 10) || 8;
+      openQuickNumberPicker({
+        initialVal: currentVal,
+        mode: mode,
+        targetInput: inputEl,
+        onConfirm: (newVal) => {
+          inputEl.value = newVal;
+        }
+      });
+    }
+
+    // TOGGLE USA LEVE CATALOGO (Sì / No)
+    function setNewCatUsaLeve(val) {
+      const boolVal = (val === true || val === 'true');
+      const hidden = document.getElementById('newCatUsaLeve');
+      if (hidden) hidden.value = boolVal ? 'true' : 'false';
+      const btnNo = document.getElementById('btnCatUsaLeveNo');
+      const btnYes = document.getElementById('btnCatUsaLeveYes');
+      if (btnNo) btnNo.classList.toggle('active', !boolVal);
+      if (btnYes) btnYes.classList.toggle('active', boolVal);
+    }
+
+    // ==========================================
     // TAB 2: SCHEDE (ROUTINE EDITOR)
     // ==========================================
     function renderRoutineEditor() {
@@ -3905,11 +4911,11 @@
           <div class="routine-item-grid">
             <div class="input-group">
               <label class="input-label">Serie</label>
-              <input type="number" class="input-dark item-serie" value="${item.serieTarget}">
+              <input type="number" class="input-dark item-serie" value="${item.serieTarget}" readonly onclick="openQuickNumberPickerForEditorItem(${idx}, 'SERIE')" style="cursor: pointer;">
             </div>
             <div class="input-group">
               <label class="input-label">${repsSecLabel}</label>
-              <input type="number" class="input-dark item-reps" value="${item.repsSecTarget}">
+              <input type="number" class="input-dark item-reps" value="${item.repsSecTarget}" readonly onclick="openQuickNumberPickerForEditorItem(${idx}, '${catInfo.unitaMisura}')" style="cursor: pointer;">
             </div>
             <div class="input-group">
               <label class="input-label">Zavorra (kg)</label>
@@ -3925,10 +4931,14 @@
                   ${getLeveOptionsHtml(item.levaTarget, true)}
                 </select>
               </div>
-            ` : `<input type="hidden" class="item-leva" value="N/A">`}
+            ` : `<input type="hidden" class="item-leva" value="">`}
             <div class="input-group">
-              <label class="input-label">Recupero (sec)</label>
-              <input type="number" step="10" class="input-dark item-rec" value="${item.recuperoSec}">
+              <label class="input-label">Recupero (tempo)</label>
+              <div class="time-picker-trigger-input" onclick="openRestClockPickerForRoutineItem(${idx})">
+                <span class="time-picker-display" id="itemRecDisplay_${idx}">${formatTimeSec(item.recuperoSec)} min</span>
+                <span class="time-picker-sub" id="itemRecSub_${idx}">(${item.recuperoSec}s) ⏱️</span>
+                <input type="hidden" class="item-rec" value="${item.recuperoSec}" id="itemRecInput_${idx}">
+              </div>
             </div>
           </div>
 
@@ -4010,6 +5020,8 @@
       const levaSelect = document.getElementById('modalAddLeva');
       const levaRow = document.getElementById('modalAddLevaRow');
 
+      window.__modalAddRepsUnit = catItem ? catItem.unitaMisura : 'REPS';
+
       if (catItem) {
         if (repsLabel) repsLabel.textContent = (catItem.unitaMisura === 'SEC') ? 'Secondi Target' : 'Reps Target';
         if (catItem.usaLeve) {
@@ -4023,7 +5035,7 @@
           if (levaGroup) levaGroup.style.display = 'none';
           if (levaRow) levaRow.style.gridTemplateColumns = '1fr';
           if (levaSelect) {
-            levaSelect.innerHTML = '<option value="N/A">N/A</option>';
+            levaSelect.innerHTML = '<option value="" selected></option>';
             levaSelect.disabled = true;
           }
         }
@@ -4032,7 +5044,7 @@
         if (levaGroup) levaGroup.style.display = 'none';
         if (levaRow) levaRow.style.gridTemplateColumns = '1fr';
         if (levaSelect) {
-          levaSelect.innerHTML = '<option value="N/A">N/A</option>';
+          levaSelect.innerHTML = '<option value="" selected></option>';
           levaSelect.disabled = true;
         }
       }
@@ -4069,6 +5081,10 @@
       document.getElementById('modalAddReps').value = 8;
       document.getElementById('modalAddZav').value = 0;
       document.getElementById('modalAddRec').value = 120;
+      const recDisp = document.getElementById('modalAddRecDisplay');
+      if (recDisp) recDisp.textContent = `${formatTimeSec(120)} min`;
+      const recSub = document.getElementById('modalAddRecSub');
+      if (recSub) recSub.textContent = `(120s) ⏱️`;
       document.getElementById('modalAddNote').value = '';
 
       // Campo ricerca completamente vuoto (nessun esercizio preimpostato)
@@ -4108,7 +5124,7 @@
       const serieVal = parseInt(document.getElementById('modalAddSerie').value, 10);
       const repsVal = parseInt(document.getElementById('modalAddReps').value, 10);
       const zavVal = parseFloat(document.getElementById('modalAddZav').value);
-      const levaVal = (catItem.usaLeve && document.getElementById('modalAddLeva')) ? (document.getElementById('modalAddLeva').value || 'Straddle') : 'N/A';
+      const levaVal = (catItem.usaLeve && document.getElementById('modalAddLeva')) ? (document.getElementById('modalAddLeva').value || 'Straddle') : '';
       const recVal = parseInt(document.getElementById('modalAddRec').value, 10);
       const noteVal = document.getElementById('modalAddNote').value.trim();
 
@@ -4186,6 +5202,7 @@
     // Modale Nuovo Catalogo
     document.getElementById('btnOpenNewCatalogModal').addEventListener('click', () => {
       document.getElementById('newCatName').value = '';
+      setNewCatUsaLeve(false);
       document.getElementById('catalogModal').classList.add('active');
     });
 
@@ -4762,6 +5779,19 @@
       const navEl = document.querySelector(`[data-tab="${targetTabId}"]`);
       if (navEl) navEl.classList.add('active');
 
+      // Aggiorna indicatore in alto a sinistra (emoji + testo della sezione attiva)
+      const tabMeta = {
+        tabAllenamento: { icon: '🏋️', label: 'Allenamento' },
+        tabSchede: { icon: '📋', label: 'Schede' },
+        tabGrafici: { icon: '📈', label: 'Grafici' },
+        tabPeso: { icon: '⚖️', label: 'Peso' }
+      };
+      const currentMeta = tabMeta[targetTabId] || { icon: '🏋️', label: 'Allenamento' };
+      const brandIconEl = document.getElementById('headerBrandIcon');
+      const brandTextEl = document.getElementById('headerBrandText');
+      if (brandIconEl) brandIconEl.textContent = currentMeta.icon;
+      if (brandTextEl) brandTextEl.textContent = currentMeta.label;
+
       const selectorBar = document.getElementById('routineSelectorBar');
       if (targetTabId === 'tabAllenamento' || targetTabId === 'tabSchede') {
         selectorBar.style.display = 'flex';
@@ -4853,19 +5883,19 @@
           'Allenamento I': [
             { nomeEsercizio: 'Planche', levaTarget: 'Straddle', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 0, recuperoSec: 180, noteScheda: 'Focus PPT' },
             { nomeEsercizio: 'Planche Push Up', levaTarget: 'Tuck', serieTarget: 4, repsSecTarget: 5, zavorraTargetKg: 0, recuperoSec: 150, noteScheda: 'Spinta piena' },
-            { nomeEsercizio: 'Dip alle parallele', levaTarget: 'N/A', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 15, recuperoSec: 120, noteScheda: 'Discesa 3s' },
-            { nomeEsercizio: 'HSPU', levaTarget: 'N/A', serieTarget: 3, repsSecTarget: 6, zavorraTargetKg: 0, recuperoSec: 150, noteScheda: 'Pancia alla parete' }
+            { nomeEsercizio: 'Dip alle parallele', levaTarget: '', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 15, recuperoSec: 120, noteScheda: 'Discesa 3s' },
+            { nomeEsercizio: 'HSPU', levaTarget: '', serieTarget: 3, repsSecTarget: 6, zavorraTargetKg: 0, recuperoSec: 150, noteScheda: 'Pancia alla parete' }
           ],
           'Allenamento II': [
             { nomeEsercizio: 'Front Lever', levaTarget: 'Straddle', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 0, recuperoSec: 180, noteScheda: 'Depressione' },
-            { nomeEsercizio: 'Trazioni alla sbarra', levaTarget: 'N/A', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 15, recuperoSec: 120, noteScheda: 'Mento sopra' }
+            { nomeEsercizio: 'Trazioni alla sbarra', levaTarget: '', serieTarget: 4, repsSecTarget: 8, zavorraTargetKg: 15, recuperoSec: 120, noteScheda: 'Mento sopra' }
           ],
           'Allenamento III': [],
           'Allenamento IV': []
         },
         previousHistoryByRoutine: {
           'Allenamento I': {
-            'Dip alle parallele': { data: '2026-10-28', scheda: 'Allenamento I', levaUsata: 'N/A', zavorraKg: 15, dettaglioSerie: '8 | 8 | 8 | 8', rpe: 8 },
+            'Dip alle parallele': { data: '2026-10-28', scheda: 'Allenamento I', levaUsata: '', zavorraKg: 15, dettaglioSerie: '8 | 8 | 8 | 8', rpe: 8 },
             'Planche': { data: '2026-10-28', scheda: 'Allenamento I', levaUsata: 'Straddle', zavorraKg: 0, dettaglioSerie: '8 | 8 | 7 | 6', rpe: 8.5 }
           }
         }
@@ -4877,9 +5907,9 @@
       const isSec = (cat.unitaMisura === 'SEC');
       const usaLeve = cat.usaLeve === true;
       return [
-        { data: '2026-10-10', levaUsata: usaLeve ? 'Tuck' : 'N/A', livelloLeva: usaLeve ? 1 : 0, caricoTotaleKg: 77.4, zavorraKg: 10, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2476.8, volumeZavorraKg: isSec ? 0 : 320, rpe: 7.5, dettaglioSerie: '8 | 8 | 8 | 8' },
-        { data: '2026-10-18', levaUsata: usaLeve ? 'Adv Tuck' : 'N/A', livelloLeva: usaLeve ? 2 : 0, caricoTotaleKg: 79.8, zavorraKg: 12, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2553.6, volumeZavorraKg: isSec ? 0 : 384, rpe: 8.0, dettaglioSerie: '8 | 8 | 8 | 8' },
-        { data: '2026-10-28', levaUsata: usaLeve ? 'Straddle' : 'N/A', livelloLeva: usaLeve ? 5 : 0, caricoTotaleKg: 83.0, zavorraKg: 15, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2656.0, volumeZavorraKg: isSec ? 0 : 480, rpe: 8.5, dettaglioSerie: '8 | 8 | 8 | 8' }
+        { data: '2026-10-10', levaUsata: usaLeve ? 'Tuck' : '', livelloLeva: usaLeve ? 1 : 0, caricoTotaleKg: 77.4, zavorraKg: 10, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2476.8, volumeZavorraKg: isSec ? 0 : 320, rpe: 7.5, dettaglioSerie: '8 | 8 | 8 | 8' },
+        { data: '2026-10-18', levaUsata: usaLeve ? 'Adv Tuck' : '', livelloLeva: usaLeve ? 2 : 0, caricoTotaleKg: 79.8, zavorraKg: 12, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2553.6, volumeZavorraKg: isSec ? 0 : 384, rpe: 8.0, dettaglioSerie: '8 | 8 | 8 | 8' },
+        { data: '2026-10-28', levaUsata: usaLeve ? 'Straddle' : '', livelloLeva: usaLeve ? 5 : 0, caricoTotaleKg: 83.0, zavorraKg: 15, totaleRepsSec: 32, mediaRepsSec: 8.0, maxRepsSec: 8, volumeTotaleKg: isSec ? 0 : 2656.0, volumeZavorraKg: isSec ? 0 : 480, rpe: 8.5, dettaglioSerie: '8 | 8 | 8 | 8' }
       ];
     }
 
