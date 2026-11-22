@@ -1,10 +1,10 @@
-const CACHE_NAME = 'calitracker-v3';
+const CACHE_NAME = 'calitracker-v4';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json?v=3',
-  './icon-192.png?v=3',
-  './icon-512.png?v=3',
+  './manifest.json?v=4',
+  './icon-192.png?v=4',
+  './icon-512.png?v=4',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
@@ -55,6 +55,23 @@ self.addEventListener('fetch', (event) => {
           return caches.match('./index.html');
         }
       });
+    })
+  );
+});
+
+// Gestione click notifica per riportare l'app in primo piano
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
     })
   );
 });

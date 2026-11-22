@@ -33,6 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
+      color-scheme: dark;
       --bg-main: #0d0f12;
       --surface-card: #161920;
       --surface-elevated: #1e232d;
@@ -92,7 +93,8 @@
       -moz-appearance: textfield;
     }
 
-    body {
+    html, body {
+      color-scheme: dark;
       background-color: var(--bg-main);
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -528,15 +530,15 @@
       border-radius: 14px;
       padding: 14px 16px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, border-color 0.2s ease;
       position: relative;
+      user-select: none;
+      touch-action: pan-y;
     }
 
-    .routine-choice-card:hover,
-    .routine-choice-card:active {
+    .routine-choice-card:hover {
       border-color: var(--accent-green);
       background: rgba(22, 25, 32, 0.95);
-      transform: translateY(-1px);
     }
 
     .routine-choice-card.is-active {
@@ -545,47 +547,78 @@
       background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, var(--surface-card) 60%);
     }
 
-    .routine-choice-card.is-reordering {
-      cursor: default;
-      border-style: dashed;
-    }
-
-    .routine-reorder-buttons-group {
-      display: inline-flex;
+    /* DRAG & DROP PLACEHOLDER (SLOT VUOTO TRATTEGGIATO) */
+    .routine-drop-placeholder {
+      border: 2px dashed rgba(16, 185, 129, 0.7);
+      background: rgba(16, 185, 129, 0.08);
+      border-radius: 14px;
+      min-height: 58px;
+      display: flex;
       align-items: center;
-      gap: 4px;
-      margin-right: 4px;
+      justify-content: center;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+      animation: placeholderPulse 1.4s ease-in-out infinite;
     }
 
-    .btn-routine-order-step {
-      background: var(--surface-elevated);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-main);
-      border-radius: 6px;
-      width: 28px;
-      height: 28px;
+    @keyframes placeholderPulse {
+      0%, 100% { border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.06); }
+      50% { border-color: rgba(16, 185, 129, 0.9); background: rgba(16, 185, 129, 0.12); }
+    }
+
+    .drop-placeholder-inner {
+      color: var(--accent-green);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    /* FLOATING DRAG PROXY (COMPATTA, OPACA AL 100%, ZERO SOVRAPPOSIZIONI) */
+    .routine-drag-proxy {
+      position: fixed;
+      z-index: 10000;
+      pointer-events: none;
+      background: #1a1e27 !important;
+      border: 2px solid var(--accent-green) !important;
+      border-radius: 14px;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.9), 0 0 22px rgba(16, 185, 129, 0.45) !important;
+      box-sizing: border-box;
+      opacity: 1 !important;
+      will-change: top, left;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .routine-drag-handle {
+      width: 34px;
+      height: 34px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.78rem;
-      cursor: pointer;
+      cursor: grab;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-right: 8px;
+      touch-action: none;
       transition: all 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      flex-shrink: 0;
     }
 
-    .btn-routine-order-step:hover:not(:disabled) {
-      border-color: var(--accent-green);
+    .routine-drag-handle:active {
+      cursor: grabbing;
       color: var(--accent-green);
-    }
-
-    .btn-routine-order-step:not(:disabled):active {
-      background: var(--accent-green);
-      color: #0d0f12;
-      transform: scale(0.92);
-    }
-
-    .btn-routine-order-step:disabled {
-      opacity: 0.25;
-      cursor: not-allowed;
+      background: rgba(16, 185, 129, 0.18);
+      border-color: var(--accent-green);
     }
 
     .routine-choice-top {
@@ -728,6 +761,150 @@
       flex-wrap: wrap;
     }
 
+    /* BANNER NOTE TECNICHE FISSE (FULL-WIDTH SOPRA LE SERIE) */
+    .exercise-tech-note-banner {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-left: 4px solid var(--accent-warning);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .tech-note-icon {
+      font-size: 1.3rem;
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+
+    .tech-note-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .tech-note-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #fbbf24;
+      text-transform: uppercase;
+    }
+
+    .tech-note-text {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.35;
+    }
+
+    /* DUE HERO CARD GRANDI PER LEVA E CARICO */
+    .exercise-hero-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .exercise-hero-controls.single-col {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-control-card {
+      background: var(--surface-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 72px;
+    }
+
+    .hero-control-card:hover,
+    .hero-control-card:active {
+      border-color: rgba(255, 255, 255, 0.25);
+      background: rgba(30, 41, 59, 0.45);
+    }
+
+    .hero-control-card.hero-leva-card {
+      border-left: 4px solid #a855f7;
+    }
+
+    .hero-control-card.hero-zav-card {
+      border-left: 4px solid var(--accent-green);
+    }
+
+    .hero-control-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .hero-control-icon {
+      font-size: 1rem;
+    }
+
+    .hero-control-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .hero-control-value-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .hero-control-val-text {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hero-control-card.hero-leva-card .hero-control-val-text {
+      color: #e9d5ff;
+    }
+
+    .hero-control-card.hero-zav-card .hero-control-val-text {
+      color: #6ee7b7;
+    }
+
+    .hero-control-arrow {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-left: 4px;
+      flex-shrink: 0;
+    }
+
+    .select-hero-leva {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+      color-scheme: dark !important;
+      background-color: #161920 !important;
+      color: #f3f4f6 !important;
+    }
+
     /* CARD CONTROLS ROW */
     .controls-row {
       display: grid;
@@ -769,18 +946,23 @@
       box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
     }
 
+    /* ========================================================
+       GLOBAL SELECT & DROPDOWN STYLING (PER TUTTI I MENÙ A TENDINA)
+       ======================================================== */
+    select,
     .select-dark {
+      color-scheme: dark !important;
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
-      background-color: var(--surface-elevated);
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      background-size: 15px 15px;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      color: var(--text-main);
+      background-color: var(--surface-elevated) !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 14px center !important;
+      background-size: 15px 15px !important;
+      border: 1.5px solid var(--border-subtle) !important;
+      border-radius: var(--radius-sm) !important;
+      color: var(--text-main) !important;
       padding: 10px 38px 10px 14px;
       font-family: inherit;
       font-size: 0.92rem;
@@ -790,31 +972,120 @@
       min-height: 42px;
       width: 100%;
       cursor: pointer;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-image 0.15s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     }
 
+    select:hover,
     .select-dark:hover {
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.25) !important;
+      background-color: #242a36 !important;
     }
 
+    select:focus,
     .select-dark:focus {
-      border-color: var(--accent-green);
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      border-color: var(--accent-green) !important;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22) !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
     }
 
+    select:disabled,
     .select-dark:disabled {
-      opacity: 0.45;
+      opacity: 0.45 !important;
       cursor: not-allowed;
-      border-color: var(--border-subtle);
+      border-color: var(--border-subtle) !important;
     }
 
-    .select-dark option {
-      background-color: #161920;
-      color: #f3f4f6;
-      font-size: 0.9rem;
+    /* STILE GLOBALE PER TUTTE LE OPZIONI DEI MENU A TENDINA */
+    select option,
+    option,
+    .select-dark option,
+    .select-hero-leva option {
+      color-scheme: dark !important;
+      background-color: #161920 !important;
+      color: #f3f4f6 !important;
+      font-family: inherit;
+      font-size: 0.95rem;
       font-weight: 500;
-      padding: 10px;
+      padding: 12px 14px;
+      line-height: 1.4;
+    }
+
+    select option:checked,
+    select option:hover,
+    select option:focus,
+    option:checked,
+    option:hover,
+    .select-dark option:checked,
+    .select-hero-leva option:checked {
+      background-color: #10b981 !important;
+      color: #0d0f12 !important;
+      font-weight: 700 !important;
+    }
+
+    /* LEVA PICKER MODAL (PER HERO CARD) */
+    .leva-picker-card {
+      max-width: 420px;
+      width: 92%;
+    }
+
+    .leva-picker-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .leva-picker-option-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--surface-elevated);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.95rem;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .leva-picker-option-btn:hover,
+    .leva-picker-option-btn:active {
+      border-color: #a855f7;
+      background: rgba(168, 85, 247, 0.12);
+    }
+
+    .leva-picker-option-btn.active {
+      border-color: #a855f7;
+      background: rgba(168, 85, 247, 0.18);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);
+      color: #ffffff;
+    }
+
+    .leva-picker-option-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .leva-picker-level-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+
+    .leva-picker-check {
+      color: #a855f7;
+      font-weight: 800;
+      font-size: 1.1rem;
     }
 
     /* AUTOCOMPLETE DROPDOWN */
@@ -2600,19 +2871,25 @@
         <button type="button" class="btn-step-large" onclick="adjustQuickNumber(+1)">+</button>
       </div>
 
-      <div class="quick-number-substeppers" id="quickNumberSubsteppers">
-        <button type="button" class="btn-clock-step" onclick="adjustQuickNumber(-5)">−5</button>
-        <button type="button" class="btn-clock-step" onclick="adjustQuickNumber(-2)">−2</button>
-        <button type="button" class="btn-clock-step" onclick="adjustQuickNumber(+2)">+2</button>
-        <button type="button" class="btn-clock-step" onclick="adjustQuickNumber(+5)">+5</button>
-      </div>
+      <div class="quick-number-presets-grid" id="quickNumberPresetsGrid" style="margin-top: 14px;"></div>
 
-      <div class="quick-number-presets-label">Scelta Rapida:</div>
-      <div class="quick-number-presets-grid" id="quickNumberPresetsGrid"></div>
-
-      <div style="display: flex; gap: 10px; margin-top: 12px;">
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
         <button type="button" class="btn-action-small" id="btnQuickNumberManual" onclick="switchToManualKeyboard()" style="background: var(--surface-card); color: var(--text-muted); font-size: 0.8rem;">⌨️ Tastiera</button>
         <button type="button" class="btn-action-small" onclick="confirmQuickNumberPicker()" style="background: var(--accent-green); color: #0d0f12; font-weight: 700;">✓ Conferma</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE SELETTORE LEVA (DARK UI PURPLE ACCENT) -->
+  <div class="modal-overlay" id="levaPickerModal" onclick="closeLevaPickerModal()">
+    <div class="modal-card leva-picker-card" onclick="event.stopPropagation()">
+      <div class="modal-title">
+        <span>📐</span>
+        <span>Seleziona Leva</span>
+      </div>
+      <div class="leva-picker-options-list" id="levaPickerOptionsList"></div>
+      <div style="margin-top: 16px;">
+        <button type="button" class="btn-action-small" onclick="closeLevaPickerModal()" style="width: 100%; background: var(--surface-card); color: var(--text-muted); font-weight: 600;">Annulla</button>
       </div>
     </div>
   </div>
@@ -2641,12 +2918,9 @@
       <div class="modal-routine-header">
         <div>
           <div class="modal-routine-title">Seleziona Allenamento</div>
-          <div class="modal-routine-subtitle">Scegli la scheda da eseguire oggi</div>
+          <div class="modal-routine-subtitle">Tocca per avviare o trascina ⠿ per riordinare</div>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <button type="button" class="btn-action-small" id="btnToggleReorderRoutines" onclick="toggleReorderRoutinesMode()" style="padding: 5px 10px; font-size: 0.78rem; background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-muted); font-weight: 600; cursor: pointer;">✏️ Modifica Ordine</button>
-          <button type="button" class="btn-modal-close" onclick="closeRoutinePickerModal()" title="Chiudi">✕</button>
-        </div>
+        <button type="button" class="btn-modal-close" onclick="closeRoutinePickerModal()" title="Chiudi">✕</button>
       </div>
       <div class="routine-cards-scroll-container" id="routinePickerCardsList">
         <!-- Generato dinamicamente con anteprima settori ed esercizi -->
@@ -2845,6 +3119,49 @@
     // ==========================================
     const STORAGE_KEY_WORKOUT = 'calitracker_active_session_v1';
     const STORAGE_KEY_SOUND = 'calitracker_sound_enabled';
+    const STORAGE_KEY_ROUTINE_ORDER = 'calitracker_routine_order_v1';
+
+    function getSavedRoutineOrder() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_ROUTINE_ORDER);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveRoutineOrder(orderArray) {
+      try {
+        if (Array.isArray(orderArray) && orderArray.length > 0) {
+          localStorage.setItem(STORAGE_KEY_ROUTINE_ORDER, JSON.stringify(orderArray));
+        }
+      } catch (e) {}
+    }
+
+    function applyRoutineOrder(routinesObj) {
+      if (!routinesObj || typeof routinesObj !== 'object') return routinesObj;
+      const savedOrder = getSavedRoutineOrder();
+      if (!Array.isArray(savedOrder) || savedOrder.length === 0) return routinesObj;
+
+      const newOrdered = {};
+      const existingKeys = Object.keys(routinesObj);
+
+      // Inserisci prima le schede presenti nell'ordine salvato
+      savedOrder.forEach(k => {
+        if (routinesObj[k] !== undefined) {
+          newOrdered[k] = routinesObj[k];
+        }
+      });
+
+      // Aggiungi in coda eventuali nuove schede non ancora presenti nell'ordine salvato
+      existingKeys.forEach(k => {
+        if (newOrdered[k] === undefined) {
+          newOrdered[k] = routinesObj[k];
+        }
+      });
+
+      return newOrdered;
+    }
 
     let appData = {
       catalog: [],
@@ -2862,6 +3179,10 @@
     let timerInterval = null;
     let timerRemainingSec = 0;
     let timerTotalSec = 0;
+    let timerEndTime = 0;
+    let currentTimerExerciseName = '';
+    let isTimerRunning = false;
+    let timerWorker = null;
 
     // Isometry State
     let isoInterval = null;
@@ -3113,6 +3434,9 @@
         return;
       }
       try {
+        if (data && data.routines) {
+          data.routines = applyRoutineOrder(data.routines);
+        }
         appData = data;
         const bw = (data.currentBodyWeight && typeof data.currentBodyWeight.peso === 'number') ? data.currentBodyWeight.peso : 68.0;
         document.getElementById('headerBwBadge').textContent = `BW: ${bw.toFixed(1)} kg`;
@@ -3145,11 +3469,15 @@
 
         updateActiveRoutineDisplay();
 
+        const isInitialAppLoad = !window.__appInitialLoadDone;
+        window.__appInitialLoadDone = true;
+        window.__routinePickerOpenedOnce = true;
+
         if (activeTab === 'tabAllenamento') {
           renderLiveWorkout();
-          // All'apertura normale (senza sessione in corso attiva), apri il menù centrale di scelta allenamento con blur
-          if (!hasSessionInProgress && !window.__routinePickerOpenedOnce) {
-            window.__routinePickerOpenedOnce = true;
+          // All'avvio iniziale dell'app (se non c'è una sessione attiva o un modale riepilogo aperto), mostra il selettore
+          const isSummaryOpen = document.getElementById('summaryModal') && document.getElementById('summaryModal').classList.contains('active');
+          if (isInitialAppLoad && !hasSessionInProgress && !isSummaryOpen) {
             openRoutinePickerModal();
           }
         } else if (activeTab === 'tabSchede') {
@@ -3189,6 +3517,95 @@
     // ==========================================
     // TAB 1: LIVE WORKOUT ASSISTANT
     // ==========================================
+    function formatZavorraDisplay(val) {
+      const num = parseFloat(val);
+      if (isNaN(num) || num === 0) return 'Corpo Libero';
+      if (num > 0) return `+${num} kg`;
+      return `${num} kg`;
+    }
+
+    function onHeroLevaChange(exIdx, selectEl) {
+      const textEl = document.getElementById(`heroLevaText_${exIdx}`);
+      if (textEl && selectEl) {
+        textEl.textContent = selectEl.value;
+      }
+      saveActiveWorkoutToStorage();
+    }
+
+    let activeLevaContext = null;
+
+    function openLevaPickerModal(exIdx) {
+      const input = document.getElementById(`exLevaInput_${exIdx}`);
+      const currentLeva = input ? input.value : 'Straddle';
+      activeLevaContext = { exIdx };
+
+      const leve = [
+        { name: 'Tuck', level: 1 },
+        { name: 'Adv Tuck', level: 2 },
+        { name: 'One Leg', level: 3 },
+        { name: 'Half Lay Straddle', level: 4 },
+        { name: 'Straddle', level: 5 },
+        { name: 'Half Lay', level: 6 },
+        { name: 'Full', level: 7 }
+      ];
+
+      const listContainer = document.getElementById('levaPickerOptionsList');
+      if (listContainer) {
+        listContainer.innerHTML = leve.map(item => {
+          const isSelected = (item.name === currentLeva);
+          return `
+            <div class="leva-picker-option-btn ${isSelected ? 'active' : ''}" onclick="selectLevaOption('${escapeHtml(item.name)}')">
+              <div class="leva-picker-option-left">
+                <span class="leva-picker-level-badge">Lv. ${item.level}</span>
+                <span>${escapeHtml(item.name)}</span>
+              </div>
+              ${isSelected ? '<span class="leva-picker-check">✓</span>' : ''}
+            </div>
+          `;
+        }).join('');
+      }
+
+      const modal = document.getElementById('levaPickerModal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function selectLevaOption(levaName) {
+      if (!activeLevaContext) return;
+      const { exIdx } = activeLevaContext;
+      const input = document.getElementById(`exLevaInput_${exIdx}`);
+      const textEl = document.getElementById(`heroLevaText_${exIdx}`);
+
+      if (input) input.value = levaName;
+      if (textEl) textEl.textContent = levaName;
+
+      saveActiveWorkoutToStorage();
+      closeLevaPickerModal();
+    }
+
+    function closeLevaPickerModal() {
+      const modal = document.getElementById('levaPickerModal');
+      if (modal) modal.classList.remove('active');
+      activeLevaContext = null;
+    }
+
+    function openQuickNumberPickerForZavorra(exIdx) {
+      const input = document.getElementById(`exZavorraInput_${exIdx}`);
+      const textEl = document.getElementById(`heroZavText_${exIdx}`);
+      const currentVal = input ? (parseFloat(input.value) || 0) : 0;
+
+      openQuickNumberPicker({
+        initialVal: currentVal,
+        mode: 'ZAVORRA',
+        targetInput: input,
+        onConfirm: (newVal) => {
+          const parsed = parseFloat(newVal) || 0;
+          if (input) input.value = parsed;
+          if (textEl) textEl.textContent = formatZavorraDisplay(parsed);
+          saveActiveWorkoutToStorage();
+        }
+      });
+    }
+
     function renderLiveWorkout() {
       const container = document.getElementById('exerciseCardsContainer');
       if (!container) return;
@@ -3331,8 +3748,6 @@
                   <div class="card-title">${escapeHtml(item.nomeEsercizio)}</div>
                   <div class="target-desc">
                     <span class="highlight">${item.serieTarget} x ${item.repsSecTarget} ${catInfo.unitaMisura}</span>
-                    ${item.levaTarget && item.levaTarget !== 'N/A' && catInfo.usaLeve ? `• <span>${escapeHtml(item.levaTarget)}</span>` : ''}
-                    • <span>${item.zavorraTargetKg > 0 ? '+' + item.zavorraTargetKg + 'kg' : (item.zavorraTargetKg < 0 ? item.zavorraTargetKg + 'kg' : 'Corpo Libero')}</span>
                     • <span>Rec: ${formatTimeSec(item.recuperoSec)}</span>
                   </div>
                 </div>
@@ -3344,20 +3759,43 @@
 
               ${prevHistHtml}
 
-              <div class="controls-row" style="${catInfo.usaLeve ? '' : 'grid-template-columns: 1fr;'}">
+              <div class="exercise-hero-controls ${catInfo.usaLeve ? '' : 'single-col'}">
                 ${catInfo.usaLeve ? `
-                  <div class="input-group">
-                    <label class="input-label">Leva Sessione</label>
-                    <select class="select-dark ex-leva" onchange="saveActiveWorkoutToStorage()">
-                      ${getLeveOptionsHtml(curLeva, true)}
-                    </select>
+                  <div class="hero-control-card hero-leva-card" onclick="openLevaPickerModal(${exIdx})">
+                    <div class="hero-control-header">
+                      <span class="hero-control-icon">📐</span>
+                      <span class="hero-control-label">Leva</span>
+                    </div>
+                    <div class="hero-control-value-box">
+                      <span class="hero-control-val-text" id="heroLevaText_${exIdx}">${escapeHtml(curLeva || 'Straddle')}</span>
+                      <span class="hero-control-arrow">▾</span>
+                      <input type="hidden" class="ex-leva" id="exLevaInput_${exIdx}" value="${escapeHtml(curLeva || 'Straddle')}">
+                    </div>
                   </div>
                 ` : `<input type="hidden" class="ex-leva" value="">`}
-                <div class="input-group">
-                  <label class="input-label">Zavorra (Kg)</label>
-                  <input type="number" step="0.5" inputmode="decimal" class="input-dark ex-zavorra" value="${curZav}" onchange="saveActiveWorkoutToStorage()">
+
+                <div class="hero-control-card hero-zav-card" onclick="openQuickNumberPickerForZavorra(${exIdx})">
+                  <div class="hero-control-header">
+                    <span class="hero-control-icon">⚖️</span>
+                    <span class="hero-control-label">Carico / Zavorra</span>
+                  </div>
+                  <div class="hero-control-value-box">
+                    <span class="hero-control-val-text" id="heroZavText_${exIdx}">${formatZavorraDisplay(curZav)}</span>
+                    <span class="hero-control-arrow">✎</span>
+                  </div>
+                  <input type="hidden" class="ex-zavorra" id="exZavorraInput_${exIdx}" value="${curZav}">
                 </div>
               </div>
+
+              ${item.noteScheda && item.noteScheda.trim() ? `
+                <div class="exercise-tech-note-banner">
+                  <div class="tech-note-icon">💡</div>
+                  <div class="tech-note-content">
+                    <div class="tech-note-label">Istruzioni Esecuzione</div>
+                    <div class="tech-note-text">${escapeHtml(item.noteScheda.trim())}</div>
+                  </div>
+                </div>
+              ` : ''}
 
               ${catInfo.unitaMisura === 'SEC' ? `
                 <button class="btn-iso-start" onclick="startIsometricAssistant(${exIdx})">
@@ -3390,10 +3828,6 @@
                       <button type="button" class="btn-rpe-half ${hasHalf ? 'active' : ''}" id="rpeHalfBtn_${exIdx}" onclick="toggleHalfRpe(${exIdx})" ${isTen ? 'disabled' : ''}>+½</button>
                     </div>
                   </div>
-                </div>
-                <div class="input-group">
-                  <label class="input-label">Note Sessione</label>
-                  <input type="text" class="input-dark ex-note" placeholder="es. Ottima spinta, fermo 1s" value="${escapeHtml(curNote)}" oninput="saveActiveWorkoutToStorage()">
                 </div>
               </div>
             </div>
@@ -3538,8 +3972,97 @@
     }
 
     // ==========================================
-    // FLOATING REST TIMER
+    // FLOATING REST TIMER & BACKGROUND NOTIFICATIONS
     // ==========================================
+    function requestNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        try {
+          Notification.requestPermission().catch(() => {});
+        } catch (e) {}
+      }
+    }
+
+    async function getActiveSwRegistration() {
+      if (!('serviceWorker' in navigator)) return null;
+      try {
+        return await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise(resolve => setTimeout(() => resolve(null), 500))
+        ]) || (await navigator.serviceWorker.getRegistration());
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function showTimerNotification(title, body, isSilent = true, requireInteraction = false, vibrate = null) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      try {
+        const swReg = await getActiveSwRegistration();
+        const options = {
+          body: body,
+          icon: './icon-192.png',
+          badge: './icon-192.png',
+          tag: 'calitracker-rest-timer',
+          renotify: !isSilent,
+          silent: isSilent,
+          requireInteraction: requireInteraction,
+          vibrate: vibrate || (isSilent ? undefined : [300, 150, 300])
+        };
+        if (swReg && swReg.showNotification) {
+          await swReg.showNotification(title, options);
+        } else {
+          new Notification(title, options);
+        }
+      } catch (err) {
+        console.warn('Errore notifica timer:', err);
+      }
+    }
+
+    async function clearTimerNotification() {
+      if (!('Notification' in window)) return;
+      try {
+        const swReg = await getActiveSwRegistration();
+        if (swReg && swReg.getNotifications) {
+          const notifs = await swReg.getNotifications({ tag: 'calitracker-rest-timer' });
+          if (notifs && notifs.length > 0) {
+            notifs.forEach(n => n.close());
+          }
+        }
+      } catch (e) {}
+    }
+
+    function initTimerWorker() {
+      if (timerWorker) return timerWorker;
+      try {
+        const workerCode = `
+          let timerId = null;
+          self.onmessage = function(e) {
+            if (e.data === 'start') {
+              if (timerId) clearInterval(timerId);
+              timerId = setInterval(function() {
+                self.postMessage('tick');
+              }, 1000);
+            } else if (e.data === 'stop') {
+              if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+              }
+            }
+          };
+        `;
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        timerWorker = new Worker(URL.createObjectURL(blob));
+        timerWorker.onmessage = function(e) {
+          if (e.data === 'tick') {
+            onTimerTick();
+          }
+        };
+      } catch (err) {
+        console.warn('Web Worker timer non disponibile, fallback standard:', err);
+      }
+      return timerWorker;
+    }
+
     function updateTimerProgressBar(overridePercent) {
       const fillEl = document.getElementById('timerProgressFill');
       if (!fillEl) return;
@@ -3562,38 +4085,148 @@
     }
 
     function startRestTimer(durationSeconds, exerciseName) {
-      clearInterval(timerInterval);
-      timerRemainingSec = durationSeconds;
-      timerTotalSec = Math.max(1, durationSeconds);
+      stopRestTimer(false);
+      requestNotificationPermission();
 
-      document.getElementById('timerExerciseName').textContent = `Recupero: ${exerciseName}`;
-      document.getElementById('timerDigits').textContent = formatTimeSec(timerRemainingSec);
-      document.getElementById('timerDigits').classList.remove('urgent');
+      currentTimerExerciseName = exerciseName || 'Esercizio';
+      timerTotalSec = Math.max(1, durationSeconds);
+      timerRemainingSec = durationSeconds;
+      timerEndTime = Date.now() + (durationSeconds * 1000);
+      isTimerRunning = true;
+
+      const nameEl = document.getElementById('timerExerciseName');
+      if (nameEl) nameEl.textContent = `Recupero: ${currentTimerExerciseName}`;
+      const digitsEl = document.getElementById('timerDigits');
+      if (digitsEl) {
+        digitsEl.textContent = formatTimeSec(timerRemainingSec);
+        digitsEl.classList.remove('urgent');
+      }
       updateTimerProgressBar(100);
       updateTimerReturnButton();
-      document.getElementById('floatingTimerBar').classList.add('active');
+      const bar = document.getElementById('floatingTimerBar');
+      if (bar) bar.classList.add('active');
 
+      // Avvia Web Worker e interval locale di supporto
+      const worker = initTimerWorker();
+      if (worker) {
+        worker.postMessage('start');
+      }
       timerInterval = setInterval(() => {
-        timerRemainingSec--;
-        updateTimerProgressBar();
-        if (timerRemainingSec <= 0) {
-          clearInterval(timerInterval);
-          document.getElementById('timerDigits').textContent = '00:00';
-          updateTimerProgressBar(0);
-          playBeep(1000, 400);
-          triggerVibration([200, 100, 200]);
-          showToast('Tempo di recupero terminato! 🚀', 'success');
-          setTimeout(() => {
-            document.getElementById('floatingTimerBar').classList.remove('active');
-          }, 3500);
-        } else {
-          document.getElementById('timerDigits').textContent = formatTimeSec(timerRemainingSec);
+        onTimerTick();
+      }, 1000);
+
+      // Se siamo già in background, mostra subito la notifica nella tendina
+      if (document.hidden) {
+        showTimerNotification(
+          `⏱️ Recupero: ${currentTimerExerciseName}`,
+          `Tempo rimanente: ${formatTimeSec(timerRemainingSec)}`,
+          true,
+          false
+        );
+      }
+    }
+
+    function onTimerTick() {
+      if (!isTimerRunning || timerEndTime <= 0) return;
+
+      const now = Date.now();
+      const diffSec = Math.ceil((timerEndTime - now) / 1000);
+      timerRemainingSec = Math.max(0, diffSec);
+
+      if (timerRemainingSec <= 0) {
+        completeRestTimer();
+        return;
+      }
+
+      if (!document.hidden) {
+        // In primo piano nell'app
+        const digitsEl = document.getElementById('timerDigits');
+        if (digitsEl) {
+          digitsEl.textContent = formatTimeSec(timerRemainingSec);
           if (timerRemainingSec <= 5) {
-            document.getElementById('timerDigits').classList.add('urgent');
+            digitsEl.classList.add('urgent');
             playBeep(440, 60);
+          } else {
+            digitsEl.classList.remove('urgent');
           }
         }
-      }, 1000);
+        updateTimerProgressBar();
+      } else {
+        // In background: aggiorna la notifica nella tendina Android
+        showTimerNotification(
+          `⏱️ Recupero: ${currentTimerExerciseName}`,
+          `Tempo rimanente: ${formatTimeSec(timerRemainingSec)}`,
+          true,
+          false
+        );
+      }
+    }
+
+    function completeRestTimer() {
+      isTimerRunning = false;
+      timerEndTime = 0;
+      timerRemainingSec = 0;
+
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      if (timerWorker) {
+        timerWorker.postMessage('stop');
+      }
+
+      const digitsEl = document.getElementById('timerDigits');
+      if (digitsEl) {
+        digitsEl.textContent = '00:00';
+        digitsEl.classList.remove('urgent');
+      }
+      updateTimerProgressBar(0);
+      playBeep(1000, 400);
+      triggerVibration([200, 100, 200]);
+      showToast('Tempo di recupero terminato! 🚀', 'success');
+
+      if (document.hidden) {
+        // Notifica ad alta priorità nella tendina con suono e vibrazione
+        showTimerNotification(
+          '🚀 Recupero terminato!',
+          `È ora della prossima serie di ${currentTimerExerciseName}`,
+          false,
+          true,
+          [300, 150, 300]
+        );
+      } else {
+        clearTimerNotification();
+      }
+
+      setTimeout(() => {
+        if (!isTimerRunning) {
+          const bar = document.getElementById('floatingTimerBar');
+          if (bar) bar.classList.remove('active');
+        }
+      }, 3500);
+    }
+
+    function stopRestTimer(fullReset = true) {
+      isTimerRunning = false;
+      timerEndTime = 0;
+      timerRemainingSec = 0;
+
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      if (timerWorker) {
+        timerWorker.postMessage('stop');
+      }
+
+      clearTimerNotification();
+
+      if (fullReset) {
+        const bar = document.getElementById('floatingTimerBar');
+        if (bar) bar.classList.remove('active');
+        updateTimerProgressBar(0);
+        updateTimerReturnButton();
+      }
     }
 
     document.getElementById('btnTimerReturn').addEventListener('click', () => {
@@ -3601,31 +4234,85 @@
     });
 
     document.getElementById('btnTimerPlus').addEventListener('click', () => {
-      timerRemainingSec += 15;
+      if (!isTimerRunning) return;
+      timerEndTime += 15000;
+      const now = Date.now();
+      timerRemainingSec = Math.max(0, Math.ceil((timerEndTime - now) / 1000));
       timerTotalSec = Math.max(timerTotalSec, timerRemainingSec);
       document.getElementById('timerDigits').textContent = formatTimeSec(timerRemainingSec);
       updateTimerProgressBar();
     });
 
     document.getElementById('btnTimerMinus').addEventListener('click', () => {
-      timerRemainingSec = Math.max(0, timerRemainingSec - 15);
+      if (!isTimerRunning) return;
+      timerEndTime = Math.max(Date.now(), timerEndTime - 15000);
+      const now = Date.now();
+      timerRemainingSec = Math.max(0, Math.ceil((timerEndTime - now) / 1000));
       document.getElementById('timerDigits').textContent = formatTimeSec(timerRemainingSec);
       updateTimerProgressBar();
+      if (timerRemainingSec <= 0) {
+        completeRestTimer();
+      }
     });
 
-    function stopRestTimer() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      timerRemainingSec = 0;
-      const bar = document.getElementById('floatingTimerBar');
-      if (bar) bar.classList.remove('active');
-      updateTimerProgressBar(0);
-      updateTimerReturnButton();
-    }
+    document.getElementById('btnTimerSkip').addEventListener('click', () => stopRestTimer(true));
 
-    document.getElementById('btnTimerSkip').addEventListener('click', stopRestTimer);
+    // Ascolto visibilità per gestione background / notifiche e sincronizzazione assoluta
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        // Rientrato nell'app: rimuove la notifica nella tendina
+        clearTimerNotification();
+
+        // Sincronizzazione immediata all'orologio reale
+        if (isTimerRunning && timerEndTime > 0) {
+          const now = Date.now();
+          const diffSec = Math.ceil((timerEndTime - now) / 1000);
+          timerRemainingSec = Math.max(0, diffSec);
+          if (timerRemainingSec <= 0) {
+            completeRestTimer();
+          } else {
+            const digitsEl = document.getElementById('timerDigits');
+            if (digitsEl) {
+              digitsEl.textContent = formatTimeSec(timerRemainingSec);
+              if (timerRemainingSec <= 5) {
+                digitsEl.classList.add('urgent');
+              } else {
+                digitsEl.classList.remove('urgent');
+              }
+            }
+            updateTimerProgressBar();
+          }
+        }
+      } else {
+        // Uscito dall'app (o schermo bloccato): mostra la notifica persistente nella tendina
+        if (isTimerRunning && timerRemainingSec > 0) {
+          showTimerNotification(
+            `⏱️ Recupero: ${currentTimerExerciseName}`,
+            `Tempo rimanente: ${formatTimeSec(timerRemainingSec)}`,
+            true,
+            false
+          );
+        }
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      if (isTimerRunning && timerEndTime > 0) {
+        clearTimerNotification();
+        const now = Date.now();
+        const diffSec = Math.ceil((timerEndTime - now) / 1000);
+        timerRemainingSec = Math.max(0, diffSec);
+        if (timerRemainingSec <= 0) {
+          completeRestTimer();
+        } else {
+          const digitsEl = document.getElementById('timerDigits');
+          if (digitsEl) {
+            digitsEl.textContent = formatTimeSec(timerRemainingSec);
+          }
+          updateTimerProgressBar();
+        }
+      }
+    });
 
     // ==========================================
     // ISOMETRIC ASSISTANT (COUNTDOWN & BEEP)
@@ -3770,7 +4457,8 @@
         const rpeBar = card.querySelector('.rpe-control-bar');
         const rpeAttr = rpeBar ? rpeBar.getAttribute('data-rpe-val') : '';
         const rpe = (rpeAttr !== null && rpeAttr !== '' && !isNaN(parseFloat(rpeAttr))) ? parseFloat(rpeAttr) : null;
-        const noteGiorno = card.querySelector('.ex-note').value.trim();
+        const noteEl = card.querySelector('.ex-note');
+        const noteGiorno = noteEl ? noteEl.value.trim() : '';
 
         const grid = document.getElementById(`seriesGrid_${exIdx}`);
         const rows = grid.querySelectorAll('.series-row');
@@ -3848,6 +4536,9 @@
     });
 
     function onWorkoutSavedSuccess(res, exercisesPayload) {
+      window.__appInitialLoadDone = true;
+      window.__routinePickerOpenedOnce = true;
+      closeRoutinePickerModal();
       stopRestTimer();
       clearSavedSession();
       showToast('Allenamento registrato con successo!', 'success');
@@ -4005,7 +4696,8 @@
         const rpeBar = card.querySelector('.rpe-control-bar');
         const rpeAttr = rpeBar ? rpeBar.getAttribute('data-rpe-val') : '';
         const rpe = (rpeAttr !== null && rpeAttr !== '' && !isNaN(parseFloat(rpeAttr))) ? parseFloat(rpeAttr) : null;
-        const noteGiorno = card.querySelector('.ex-note').value;
+        const noteEl = card.querySelector('.ex-note');
+        const noteGiorno = noteEl ? noteEl.value : '';
 
         const grid = document.getElementById(`seriesGrid_${exIdx}`);
         const rows = grid.querySelectorAll('.series-row');
@@ -4141,66 +4833,187 @@
     function closeRoutinePickerModal() {
       const modal = document.getElementById('routinePickerModal');
       if (modal) modal.style.display = 'none';
-      if (isReorderingRoutinesMode) {
-        toggleReorderRoutinesMode();
-      }
     }
 
-    let isReorderingRoutinesMode = false;
+    let routineDragState = null;
+    let routineDragJustEnded = false;
 
-    function toggleReorderRoutinesMode() {
-      isReorderingRoutinesMode = !isReorderingRoutinesMode;
-      const btn = document.getElementById('btnToggleReorderRoutines');
-      if (btn) {
-        if (isReorderingRoutinesMode) {
-          btn.innerHTML = '✓ Fine';
-          btn.style.background = 'var(--accent-green)';
-          btn.style.color = '#0d0f12';
-          btn.style.borderColor = 'var(--accent-green)';
-        } else {
-          btn.innerHTML = '✏️ Modifica Ordine';
-          btn.style.background = 'var(--surface-elevated)';
-          btn.style.color = 'var(--text-muted)';
-          btn.style.borderColor = 'var(--border-subtle)';
+    function handleRoutineCardClick(e, schedaName) {
+      if (routineDragJustEnded) return;
+      if (e.target.closest('.routine-drag-handle')) return;
+      selectRoutineFromPicker(schedaName);
+    }
+
+    function startRoutineDrag(e, schedaName) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const handle = e.currentTarget;
+      const container = document.getElementById('routinePickerCardsList');
+      if (!container) return;
+
+      const card = handle.closest('.routine-choice-card');
+      if (!card) return;
+
+      const exercises = (appData && appData.routines && appData.routines[schedaName]) || [];
+      const cardRect = card.getBoundingClientRect();
+
+      // Crea la floating proxy compatta (100% opaca, con ombra e bordo verde neon)
+      const proxy = document.createElement('div');
+      proxy.className = 'routine-drag-proxy';
+      proxy.style.width = Math.min(cardRect.width, window.innerWidth - 32) + 'px';
+      proxy.style.height = '56px';
+      proxy.style.left = cardRect.left + 'px';
+      proxy.style.top = (e.clientY - 28) + 'px';
+      proxy.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; width: 100%; height: 100%; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.25rem; color: var(--accent-green); line-height: 1;">⠿</span>
+            <span style="font-weight: 800; font-size: 1.05rem; color: #ffffff; letter-spacing: -0.01em;">${escapeHtml(schedaName)}</span>
+          </div>
+          <span style="font-size: 0.74rem; font-weight: 700; color: var(--accent-green); background: rgba(16, 185, 129, 0.14); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">${exercises.length} es.</span>
+        </div>
+      `;
+      document.body.appendChild(proxy);
+
+      // Crea lo slot vuoto (drop placeholder tratteggiato)
+      const placeholder = document.createElement('div');
+      placeholder.className = 'routine-drop-placeholder';
+      placeholder.id = 'routineDropPlaceholder';
+      placeholder.innerHTML = `
+        <div class="drop-placeholder-inner">
+          <span style="font-size: 1rem;">📥</span>
+          <span>Sposta qui</span>
+        </div>
+      `;
+
+      // Inserisci il placeholder dove si trovava la card e nascondi la card originale
+      container.insertBefore(placeholder, card);
+      card.style.display = 'none';
+
+      try {
+        handle.setPointerCapture(e.pointerId);
+      } catch (err) {}
+
+      routineDragState = {
+        pointerId: e.pointerId,
+        handle,
+        card,
+        proxy,
+        placeholder,
+        container,
+        schedaName,
+        offsetY: 28
+      };
+
+      handle.addEventListener('pointermove', onRoutineDragMove);
+      handle.addEventListener('pointerup', onRoutineDragEnd);
+      handle.addEventListener('pointercancel', onRoutineDragEnd);
+    }
+
+    function onRoutineDragMove(e) {
+      if (!routineDragState) return;
+      e.preventDefault();
+
+      const { proxy, placeholder, container, offsetY } = routineDragState;
+
+      // Sposta la proxy compatta sotto il cursore
+      proxy.style.top = (e.clientY - offsetY) + 'px';
+
+      // Auto-scroll del contenitore se vicino ai bordi
+      const listRect = container.getBoundingClientRect();
+      if (e.clientY < listRect.top + 45) {
+        container.scrollTop -= 7;
+      } else if (e.clientY > listRect.bottom - 45) {
+        container.scrollTop += 7;
+      }
+
+      // Trova le altre card visibili (esclusa quella nascosta e il placeholder)
+      const cards = Array.from(container.querySelectorAll('.routine-choice-card')).filter(c => c.style.display !== 'none');
+      const addBtn = container.querySelector('.routine-choice-add-card');
+      const cursorY = e.clientY;
+
+      let inserted = false;
+      for (let i = 0; i < cards.length; i++) {
+        const c = cards[i];
+        const rect = c.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+
+        if (cursorY < midY) {
+          if (placeholder.nextElementSibling !== c) {
+            container.insertBefore(placeholder, c);
+          }
+          inserted = true;
+          break;
         }
       }
-      renderRoutinePickerModalContent();
+
+      if (!inserted) {
+        if (addBtn && placeholder.nextElementSibling !== addBtn) {
+          container.insertBefore(placeholder, addBtn);
+        } else if (!addBtn && placeholder !== container.lastElementChild) {
+          container.appendChild(placeholder);
+        }
+      }
     }
 
-    function moveRoutineOrder(schedaName, direction) {
-      if (!appData || !appData.routines) return;
-      const keys = Object.keys(appData.routines);
-      const currIdx = keys.indexOf(schedaName);
-      if (currIdx === -1) return;
-      const targetIdx = currIdx + direction;
-      if (targetIdx < 0 || targetIdx >= keys.length) return;
+    function onRoutineDragEnd(e) {
+      if (!routineDragState) return;
+      const { handle, card, proxy, placeholder, container, pointerId } = routineDragState;
 
-      const temp = keys[currIdx];
-      keys[currIdx] = keys[targetIdx];
-      keys[targetIdx] = temp;
+      handle.removeEventListener('pointermove', onRoutineDragMove);
+      handle.removeEventListener('pointerup', onRoutineDragEnd);
+      handle.removeEventListener('pointercancel', onRoutineDragEnd);
 
-      const newRoutines = {};
-      keys.forEach(k => {
-        newRoutines[k] = appData.routines[k];
-      });
-      appData.routines = newRoutines;
+      try {
+        handle.releasePointerCapture(pointerId);
+      } catch (err) {}
 
-      renderRoutinePickerModalContent();
-      updateActiveRoutineDisplay();
-
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(() => {
-            showToast('Ordine schede sincronizzato!', 'success');
-          })
-          .withFailureHandler((err) => {
-            console.warn('Avviso salvataggio ordine schede:', err);
-            showToast('Ordine aggiornato localmente', 'info');
-          })
-          .reorderRoutines(keys);
-      } else {
-        showToast('Ordine schede aggiornato!', 'success');
+      if (proxy && proxy.parentNode) {
+        proxy.parentNode.removeChild(proxy);
       }
+
+      if (placeholder && placeholder.parentNode) {
+        container.insertBefore(card, placeholder);
+        placeholder.remove();
+      }
+      card.style.display = '';
+
+      routineDragJustEnded = true;
+      setTimeout(() => { routineDragJustEnded = false; }, 260);
+
+      const domCards = Array.from(container.querySelectorAll('.routine-choice-card'));
+      const newOrder = domCards.map(c => c.getAttribute('data-routine-name')).filter(Boolean);
+
+      const oldKeys = Object.keys((appData && appData.routines) || {});
+      const hasChanged = newOrder.length === oldKeys.length && newOrder.some((k, i) => k !== oldKeys[i]);
+
+      if (hasChanged) {
+        const newRoutines = {};
+        newOrder.forEach(k => {
+          if (appData.routines[k]) newRoutines[k] = appData.routines[k];
+        });
+        appData.routines = newRoutines;
+
+        saveRoutineOrder(newOrder);
+        renderRoutinePickerModalContent();
+        updateActiveRoutineDisplay();
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(() => {
+              showToast('Ordine schede sincronizzato!', 'success');
+            })
+            .withFailureHandler((err) => {
+              console.warn('Avviso sincronizzazione ordine schede:', err);
+            })
+            .reorderRoutines(newOrder);
+        } else {
+          showToast('Ordine schede aggiornato!', 'success');
+        }
+      }
+
+      routineDragState = null;
     }
 
     function handleRoutinePickerBackdropClick(e) {
@@ -4269,24 +5082,16 @@
             }).join('')
           : `<span class="routine-choice-empty-note">Nessun esercizio (configuralo nel tab Schede)</span>`;
 
-        const clickAttr = isReorderingRoutinesMode ? '' : `onclick="selectRoutineFromPicker('${escapeHtml(schedaName)}')"` ;
-        const reorderBtnsHtml = isReorderingRoutinesMode ? `
-          <div class="routine-reorder-buttons-group" onclick="event.stopPropagation()">
-            <button type="button" class="btn-routine-order-step" onclick="moveRoutineOrder('${escapeHtml(schedaName)}', -1)" ${idx === 0 ? 'disabled' : ''} title="Sposta in alto">▲</button>
-            <button type="button" class="btn-routine-order-step" onclick="moveRoutineOrder('${escapeHtml(schedaName)}', 1)" ${idx === routineKeys.length - 1 ? 'disabled' : ''} title="Sposta in basso">▼</button>
-          </div>
-        ` : '';
-
         return `
-          <div class="routine-choice-card ${isActive ? 'is-active' : ''} ${isReorderingRoutinesMode ? 'is-reordering' : ''}" ${clickAttr}>
+          <div class="routine-choice-card ${isActive ? 'is-active' : ''}" data-routine-name="${escapeHtml(schedaName)}" onclick="handleRoutineCardClick(event, '${escapeHtml(schedaName)}')">
             <div class="routine-choice-top">
-              <div class="routine-choice-name">
-                ${isActive ? '⚡ ' : ''}${escapeHtml(schedaName)}
-              </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                ${reorderBtnsHtml}
-                <span class="routine-choice-count">${exercises.length} ${exercises.length === 1 ? 'es.' : 'es.'}</span>
+                <span class="routine-drag-handle" title="Trascina per riordinare" onpointerdown="startRoutineDrag(event, '${escapeHtml(schedaName)}')">⠿</span>
+                <div class="routine-choice-name">
+                  ${isActive ? '⚡ ' : ''}${escapeHtml(schedaName)}
+                </div>
               </div>
+              <span class="routine-choice-count">${exercises.length} ${exercises.length === 1 ? 'es.' : 'es.'}</span>
             </div>
 
             ${sectorBadgesHtml ? `<div class="routine-sector-badges-row">${sectorBadgesHtml}</div>` : ''}
@@ -4298,7 +5103,7 @@
         `;
       }).join('');
 
-      const addBtnHtml = isReorderingRoutinesMode ? '' : `
+      const addBtnHtml = `
         <div class="routine-choice-add-card" onclick="handleAddNewRoutineFromPicker()" title="Crea una nuova scheda di allenamento">
           <span style="font-size: 1.15rem;">➕</span>
           <span>Nuova Scheda</span>
@@ -4365,6 +5170,7 @@
       if (!appData.routines) appData.routines = {};
       appData.routines[trimmed] = [];
       activeRoutine = trimmed;
+      saveRoutineOrder(Object.keys(appData.routines));
       updateActiveRoutineDisplay();
 
       if (window.__newRoutineRedirectToEditor) {
@@ -4438,6 +5244,13 @@
       appData.routines[trimmed] = appData.routines[oldName] || [];
       delete appData.routines[oldName];
 
+      const savedOrder = getSavedRoutineOrder();
+      if (Array.isArray(savedOrder)) {
+        saveRoutineOrder(savedOrder.map(k => k === oldName ? trimmed : k));
+      } else {
+        saveRoutineOrder(Object.keys(appData.routines));
+      }
+
       if (appData.previousHistoryByRoutine && appData.previousHistoryByRoutine[oldName]) {
         appData.previousHistoryByRoutine[trimmed] = appData.previousHistoryByRoutine[oldName];
         delete appData.previousHistoryByRoutine[oldName];
@@ -4488,6 +5301,13 @@
       delete appData.routines[nameToDelete];
       if (appData.previousHistoryByRoutine) {
         delete appData.previousHistoryByRoutine[nameToDelete];
+      }
+
+      const savedOrder = getSavedRoutineOrder();
+      if (Array.isArray(savedOrder)) {
+        saveRoutineOrder(savedOrder.filter(k => k !== nameToDelete));
+      } else {
+        saveRoutineOrder(Object.keys(appData.routines || {}));
       }
 
       const remaining = Object.keys(appData.routines || {});
@@ -4713,13 +5533,18 @@
     // MODALE SELETTORE RAPIDO SERIE / REPS / SEC
     // ==========================================
     let currentQuickNumber = 8;
-    let quickNumberMode = 'REPS'; // 'SERIE' | 'REPS' | 'SEC'
+    let quickNumberMode = 'REPS'; // 'SERIE' | 'REPS' | 'SEC' | 'ZAVORRA'
     let onQuickNumberConfirm = null;
     let targetInputForManual = null;
 
     function openQuickNumberPicker(options) {
-      currentQuickNumber = Math.max(1, parseInt(options.initialVal, 10) || 1);
       quickNumberMode = options.mode || 'REPS';
+      if (quickNumberMode === 'ZAVORRA') {
+        const p = parseFloat(options.initialVal);
+        currentQuickNumber = isNaN(p) ? 0 : p;
+      } else {
+        currentQuickNumber = Math.max(1, parseInt(options.initialVal, 10) || 1);
+      }
       onQuickNumberConfirm = options.onConfirm || null;
       targetInputForManual = options.targetInput || null;
 
@@ -4741,22 +5566,34 @@
         if (titleEl) titleEl.textContent = 'Secondi Isometria';
         if (iconEl) iconEl.textContent = '⏱️';
         if (unitEl) unitEl.textContent = 'sec';
-        presets = [5, 8, 10, 12, 15, 20, 25, 30, 40, 45, 60, 90];
+        presets = []; // Nessun suggerimento: solo + e -
+      } else if (quickNumberMode === 'ZAVORRA') {
+        if (titleEl) titleEl.textContent = 'Carico / Zavorra';
+        if (iconEl) iconEl.textContent = '⚖️';
+        if (unitEl) unitEl.textContent = 'kg';
+        presets = [0, 5, 10, 15];
       } else {
+        // REPS: i primi 4 suggerimenti [4, 6, 8, 10]
         if (titleEl) titleEl.textContent = 'Ripetizioni';
         if (iconEl) iconEl.textContent = '⚡';
         if (unitEl) unitEl.textContent = 'reps';
-        presets = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15];
+        presets = [4, 6, 8, 10];
       }
 
       updateQuickNumberDisplay();
 
       if (presetsGrid) {
-        presetsGrid.innerHTML = presets.map(p => `
-          <button type="button" class="btn-quick-preset ${p === currentQuickNumber ? 'active' : ''}" onclick="setQuickNumber(${p})">
-            ${p}${quickNumberMode === 'SEC' ? 's' : ''}
-          </button>
-        `).join('');
+        if (presets.length > 0) {
+          presetsGrid.style.display = 'grid';
+          presetsGrid.innerHTML = presets.map(p => `
+            <button type="button" class="btn-quick-preset ${p === currentQuickNumber ? 'active' : ''}" data-val="${p}" onclick="setQuickNumber(${p})">
+              ${quickNumberMode === 'ZAVORRA' ? (p > 0 ? '+' + p + 'kg' : '0 kg') : (p + (quickNumberMode === 'SEC' ? 's' : ''))}
+            </button>
+          `).join('');
+        } else {
+          presetsGrid.style.display = 'none';
+          presetsGrid.innerHTML = '';
+        }
       }
 
       const modal = document.getElementById('quickNumberPickerModal');
@@ -4765,20 +5602,35 @@
 
     function updateQuickNumberDisplay() {
       const digitEl = document.getElementById('quickNumberDisplayDigit');
-      if (digitEl) digitEl.textContent = currentQuickNumber;
+      if (digitEl) {
+        if (quickNumberMode === 'ZAVORRA') {
+          digitEl.textContent = (currentQuickNumber > 0 ? '+' : '') + currentQuickNumber;
+        } else {
+          digitEl.textContent = currentQuickNumber;
+        }
+      }
       document.querySelectorAll('.btn-quick-preset').forEach(btn => {
-        const val = parseInt(btn.textContent, 10);
+        const rawVal = btn.getAttribute('data-val');
+        const val = parseFloat(rawVal !== null ? rawVal : btn.textContent);
         btn.classList.toggle('active', val === currentQuickNumber);
       });
     }
 
     function adjustQuickNumber(delta) {
-      currentQuickNumber = Math.max(1, currentQuickNumber + delta);
+      if (quickNumberMode === 'ZAVORRA') {
+        currentQuickNumber = Math.max(0, Math.round((currentQuickNumber + delta) * 10) / 10);
+      } else {
+        currentQuickNumber = Math.max(1, currentQuickNumber + delta);
+      }
       updateQuickNumberDisplay();
     }
 
     function setQuickNumber(val) {
-      currentQuickNumber = Math.max(1, parseInt(val, 10) || 1);
+      if (quickNumberMode === 'ZAVORRA') {
+        currentQuickNumber = Math.max(0, parseFloat(val) || 0);
+      } else {
+        currentQuickNumber = Math.max(1, parseInt(val, 10) || 1);
+      }
       updateQuickNumberDisplay();
     }
 
@@ -4800,9 +5652,21 @@
       const input = targetInputForManual;
       closeQuickNumberPickerModal();
       if (input) {
-        input.removeAttribute('readonly');
-        input.focus();
-        if (typeof input.select === 'function') input.select();
+        if (input.type === 'hidden') {
+          const current = parseFloat(input.value) || 0;
+          const res = prompt('Inserisci carico / zavorra in kg:', current);
+          if (res !== null && !isNaN(parseFloat(res))) {
+            const val = parseFloat(res);
+            input.value = val;
+            const textEl = document.getElementById(input.id.replace('exZavorraInput_', 'heroZavText_'));
+            if (textEl) textEl.textContent = formatZavorraDisplay(val);
+            saveActiveWorkoutToStorage();
+          }
+        } else {
+          input.removeAttribute('readonly');
+          input.focus();
+          if (typeof input.select === 'function') input.select();
+        }
       }
     }
 
@@ -5411,7 +6275,10 @@
       };
       const unitLabel = (catItem.unitaMisura === 'SEC') ? 'sec' : 'reps';
 
-      tbody.innerHTML = data.map(d => {
+      // Mostra le sessioni dalla più recente in cima (ordine cronologico decrescente)
+      const sortedData = [...data].reverse();
+
+      tbody.innerHTML = sortedData.map(d => {
         const levaDisplay = catItem.usaLeve ? (d.levaUsata && d.levaUsata !== 'N/A' ? d.levaUsata : '—') : '—';
         const volDisplay = `${d.totaleRepsSec} ${unitLabel}`;
         return `
